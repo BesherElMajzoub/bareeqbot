@@ -10,8 +10,17 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type Tenant = {
+    id: number;
+    name: string;
+    slug: string;
+    status?: string;
+};
+
 export type Auth = {
     user: User;
+    currentTenant?: Tenant | null;
+    tenants?: Tenant[];
 };
 
 /* @chisel-passkeys */

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string $slug
  * @property int $max_pages
- * @property array|null $features
+ * @property array<string, mixed>|null $features
  * @property bool $is_active
  * @property int $sort
  */

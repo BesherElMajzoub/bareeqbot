@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Scope;
  * When no tenant is bound (e.g. platform admin or console context) the scope
  * is inactive and does not filter — such contexts are expected to be guarded
  * separately. Use `Model::withoutTenantScope()` to bypass explicitly.
+ *
+ * @implements Scope<Model>
  */
 class TenantScope implements Scope
 {
@@ -24,9 +26,12 @@ class TenantScope implements Scope
             return;
         }
 
-        /** @var \App\Concerns\BelongsToTenant $model */
+        $column = method_exists($model, 'getTenantColumn')
+            ? $model->getTenantColumn()
+            : 'tenant_id';
+
         $builder->where(
-            $model->getTable().'.'.$model->getTenantColumn(),
+            $model->getTable().'.'.$column,
             $context->id(),
         );
     }

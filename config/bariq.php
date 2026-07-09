@@ -19,4 +19,35 @@ return [
         'password' => env('BARIQ_ADMIN_PASSWORD', 'password'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Platform team id
+    |--------------------------------------------------------------------------
+    |
+    | Spatie's teams feature requires a non-null team id on every role
+    | assignment. Real tenant ids start at 1, so we assign global platform
+    | roles (super_admin / support) under this sentinel "no tenant" team id.
+    |
+    */
+
+    'platform_team_id' => 0,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Billing
+    |--------------------------------------------------------------------------
+    |
+    | v1 uses the manual provider (offline payment + admin activation). Swap
+    | `provider` for an automated gateway later without touching the
+    | subscription lifecycle — gateways implement the same BillingProvider
+    | contract. `proof_disk` stores uploaded payment receipts.
+    |
+    */
+
+    'billing' => [
+        'provider' => env('BARIQ_BILLING_PROVIDER', 'manual'),
+        'currency' => env('BARIQ_BILLING_CURRENCY', 'SAR'),
+        'proof_disk' => env('BARIQ_BILLING_PROOF_DISK', 'local'),
+    ],
+
 ];

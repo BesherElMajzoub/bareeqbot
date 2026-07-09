@@ -25,8 +25,8 @@ class PlatformAdminSeeder extends Seeder
             'email_verified_at' => now(),
         ])->save();
 
-        // Platform roles are assigned outside any tenant team context.
-        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+        // Platform roles are assigned under the sentinel "no tenant" team id.
+        app(PermissionRegistrar::class)->setPermissionsTeamId(config('bariq.platform_team_id'));
         $admin->assignRole(PlatformRole::SuperAdmin->value);
     }
 }

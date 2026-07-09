@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\Billing\BillingProvider;
+use App\Services\Billing\ManualProvider;
 use App\Support\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -19,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
         // The active tenant for the current request/job. Resolved by the
         // SetCurrentTenant middleware, or set manually inside webhook jobs.
         $this->app->singleton(TenantContext::class);
+
+        // Billing provider seam — manual today, automated gateway later.
+        $this->app->bind(BillingProvider::class, fn ($app) => match (config('bariq.billing.provider')) {
+            default => $app->make(ManualProvider::class),
+        });
     }
 
     /**
