@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Concerns;
+
+use App\Models\Tenant;
+use App\Scopes\TenantScope;
+use App\Support\TenantContext;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * Apply to every tenant-owned model. Adds the tenant global scope and
+ * auto-fills `tenant_id` from the active TenantContext on create.
+ *
+ * @method static Builder withoutTenantScope()
+ */
+trait BelongsToTenant
+{
+    public static function bootBelongsToTenant(): void
+    {
+        static::addGlobalScope(new TenantScope);
+
+        static::creating(function ($model) {
+            /** @var \Illuminate\Database\Eloquent\Model&self $model */
+            $context = app(TenantContext::class);
+
+            if ($context->has() && empty($model->{$model->getTenantColumn()})) {
+                $model->{$model->getTenantColumn()} = $context->id();
+            }
+        });
+    }
+
+    public function getTenantColumn(): string
+    {
+        return 'tenant_id';
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, $this->getTenantColumn());
+    }
+
+    public function scopeWithoutTenantScope(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope(TenantScope::class);
+    }
+}
