@@ -12,6 +12,8 @@ type Rule = {
     id: number;
     name: string;
     trigger_surface: string;
+    target_scope: string;
+    target_ref: string | null;
     match_type: string;
     keyword: string | null;
     priority: number;
@@ -33,6 +35,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
         name: '',
         trigger_surface: 'post_comment',
         target_scope: 'all',
+        target_ref: '',
         match_type: 'any',
         keyword: '',
         case_sensitive: false,
@@ -50,7 +53,8 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         form.post(rules.store().url, {
-            onSuccess: () => form.reset('name', 'keyword', 'actions'),
+            onSuccess: () =>
+                form.reset('name', 'keyword', 'target_ref', 'actions'),
         });
     };
 
@@ -115,6 +119,49 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                         required
                                     />
                                 </label>
+
+                                <label className="flex flex-col gap-1 text-sm">
+                                    {t('rules.target_scope')}
+                                    <select
+                                        className={selectClass}
+                                        value={form.data.target_scope}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'target_scope',
+                                                e.target.value,
+                                            )
+                                        }
+                                    >
+                                        <option value="all">
+                                            {t('rules.target_all')}
+                                        </option>
+                                        <option value="specific">
+                                            {t('rules.target_specific')}
+                                        </option>
+                                    </select>
+                                </label>
+
+                                {form.data.target_scope === 'specific' && (
+                                    <label className="flex flex-col gap-1 text-sm">
+                                        {t('rules.target_ref')}
+                                        <Input
+                                            value={form.data.target_ref}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'target_ref',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                'rules.target_ref_placeholder',
+                                            )}
+                                            required
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                            {t('rules.target_ref_help')}
+                                        </span>
+                                    </label>
+                                )}
 
                                 <label className="flex flex-col gap-1 text-sm">
                                     {t('rules.match')}
@@ -270,6 +317,13 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             {rule.keyword
                                                 ? `: ${rule.keyword}`
                                                 : ''}
+                                            {rule.target_scope ===
+                                                'specific' && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    {t('rules.target_specific')}
+                                                    : {rule.target_ref}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-3">{rule.priority}</td>
                                         <td className="p-3">

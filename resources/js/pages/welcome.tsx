@@ -10,11 +10,12 @@ import {
     ChevronDown,
     ArrowRight,
     Sparkles,
-    Instagram,
-    Facebook,
     ArrowLeft,
     Send,
-    Clock,
+    Instagram,
+    Facebook,
+    Menu,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
@@ -38,6 +39,8 @@ export default function Welcome() {
 
     // State for FAQs (index of open question, null if none)
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const toggleFaq = (index: number) => {
         setOpenFaq(openFaq === index ? null : index);
@@ -70,7 +73,7 @@ export default function Welcome() {
             name: 'Starter',
             slug: 'starter',
             maxPages: 1,
-            baseMonthly: 29,
+            baseMonthly: 300000,
             featuresKey: 'welcome.pricing.starter_features',
             color: 'from-blue-500/20 to-indigo-500/20',
             borderColor: 'hover:border-blue-500/50',
@@ -80,7 +83,7 @@ export default function Welcome() {
             name: 'Growth',
             slug: 'growth',
             maxPages: 5,
-            baseMonthly: 99,
+            baseMonthly: 400000,
             featuresKey: 'welcome.pricing.growth_features',
             color: 'from-purple-500/20 to-pink-500/20',
             borderColor: 'hover:border-purple-500/50',
@@ -90,7 +93,7 @@ export default function Welcome() {
             name: 'Business',
             slug: 'business',
             maxPages: 15,
-            baseMonthly: 249,
+            baseMonthly: 500000,
             featuresKey: 'welcome.pricing.business_features',
             color: 'from-primary/20 to-accent/20',
             borderColor: 'border-primary/50 shadow-primary/10 shadow-lg',
@@ -100,7 +103,7 @@ export default function Welcome() {
             name: 'Agency',
             slug: 'agency',
             maxPages: 50,
-            baseMonthly: 699,
+            baseMonthly: 900000,
             featuresKey: 'welcome.pricing.agency_features',
             color: 'from-amber-500/20 to-orange-500/20',
             borderColor: 'hover:border-amber-500/50',
@@ -142,58 +145,40 @@ export default function Welcome() {
                 <div className="pointer-events-none absolute right-1/3 bottom-1/4 -z-10 size-[350px] rounded-full bg-primary/5 blur-[100px]" />
 
                 {/* Header / Navbar */}
-                <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-lg transition-colors duration-300">
-                    <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+                <header className="fixed inset-x-0 top-4 z-50 mx-auto w-[min(1280px,95%)] transition-all duration-300">
+                    <div className="flex items-center justify-between gap-4 rounded-full border border-border/40 bg-background/80 px-5 py-2.5 shadow-[0_18px_45px_rgba(76,29,149,0.08)] backdrop-blur-xl transition-all duration-300 dark:bg-card/85 dark:shadow-[0_18px_45px_rgba(0,0,0,0.3)]">
                         {/* Logo */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-white p-1 shadow-sm">
+                        <a href="#" className="flex items-center">
+                            <div className="flex aspect-square size-12 items-center justify-center overflow-hidden rounded-full border border-border/80 bg-white p-1 shadow-sm">
                                 <img
-                                    src="/ChatGPT Image 8 مايو 2026، 12_03_15 ص.png"
+                                    src="/image.png"
                                     alt={t('app.name')}
                                     className="size-full object-contain"
                                 />
                             </div>
-                            <span className="bg-gradient-to-r from-foreground via-foreground/90 to-primary bg-clip-text text-2xl font-black tracking-tight text-foreground">
-                                {t('app.name')}
-                            </span>
-                        </div>
+                        </a>
 
                         {/* Middle Links - Desktop */}
-                        <nav className="hidden items-center gap-6 text-sm font-semibold text-muted-foreground md:flex">
-                            <a
-                                href="#features"
-                                className="transition-colors hover:text-foreground"
-                            >
-                                {t('welcome.features_title')}
-                            </a>
-                            <a
-                                href="#demo"
-                                className="transition-colors hover:text-foreground"
-                            >
-                                {t('welcome.demo_title').replace(' الآن!', '')}
-                            </a>
-                            <a
-                                href="#how"
-                                className="transition-colors hover:text-foreground"
-                            >
-                                {t('welcome.how_title').replace('؟', '')}
-                            </a>
-                            <a
-                                href="#pricing"
-                                className="transition-colors hover:text-foreground"
-                            >
-                                {t('welcome.pricing_title')}
-                            </a>
-                            <a
-                                href="#faq"
-                                className="transition-colors hover:text-foreground"
-                            >
-                                {t('welcome.faq_title')}
-                            </a>
+                        <nav className="hidden items-center gap-1 lg:flex">
+                            {[
+                                { label: t('welcome.features_title'), href: '#features' },
+                                { label: t('welcome.demo_title').replace(' الآن!', ''), href: '#demo' },
+                                { label: t('welcome.how_title').replace('؟', ''), href: '#how' },
+                                { label: t('welcome.pricing_title'), href: '#pricing' },
+                                { label: t('welcome.faq_title'), href: '#faq' },
+                            ].map((link) => (
+                                <a
+                                    key={link.href}
+                                    href={link.href}
+                                    className="rounded-full px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition hover:bg-primary/5 hover:text-primary dark:hover:bg-primary/10"
+                                >
+                                    {link.label}
+                                </a>
+                            ))}
                         </nav>
 
                         {/* Action buttons + Theme Toggler */}
-                        <div className="flex items-center gap-3">
+                        <div className="hidden md:flex items-center gap-2.5">
                             {/* Theme Toggler */}
                             <button
                                 onClick={() =>
@@ -203,7 +188,7 @@ export default function Welcome() {
                                             : 'dark',
                                     )
                                 }
-                                className="flex size-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
                                 aria-label="Toggle Theme"
                             >
                                 {resolvedAppearance === 'dark' ? (
@@ -216,7 +201,7 @@ export default function Welcome() {
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98]"
+                                    className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
                                 >
                                     {t('nav.dashboard')}
                                 </Link>
@@ -224,33 +209,115 @@ export default function Welcome() {
                                 <>
                                     <Link
                                         href={login()}
-                                        className="inline-flex h-9 items-center justify-center rounded-xl px-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                                        className="inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
                                     >
                                         {t('auth.login')}
                                     </Link>
                                     <Link
                                         href={register()}
-                                        className="inline-flex h-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/5 px-4 text-sm font-bold text-primary shadow-xs transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
+                                        className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
                                     >
                                         {t('auth.register')}
                                     </Link>
                                 </>
                             )}
                         </div>
+
+                        {/* Mobile controls (Menu and Theme) */}
+                        <div className="flex items-center gap-2 lg:hidden">
+                            {/* Theme Toggler for mobile */}
+                            <button
+                                onClick={() =>
+                                    updateAppearance(
+                                        resolvedAppearance === 'dark'
+                                            ? 'light'
+                                            : 'dark',
+                                    )
+                                }
+                                className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                aria-label="Toggle Theme"
+                            >
+                                {resolvedAppearance === 'dark' ? (
+                                    <Sun className="size-4.5" />
+                                ) : (
+                                    <Moon className="size-4.5" />
+                                )}
+                            </button>
+
+                            {/* Hamburger button */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="grid size-9 place-items-center rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                                aria-label={mobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                            >
+                                {mobileMenuOpen ? (
+                                    <X className="size-4.5" />
+                                ) : (
+                                    <Menu className="size-4.5" />
+                                )}
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Mobile menu panel */}
+                    {mobileMenuOpen && (
+                        <div className="mt-2 rounded-3xl border border-border/40 bg-background/95 p-4 shadow-[0_18px_45px_rgba(76,29,149,0.08)] backdrop-blur-xl transition-all duration-300 dark:bg-card/95 lg:hidden">
+                            <nav className="flex flex-col gap-1.5">
+                                {[
+                                    { label: t('welcome.features_title'), href: '#features' },
+                                    { label: t('welcome.demo_title').replace(' الآن!', ''), href: '#demo' },
+                                    { label: t('welcome.how_title').replace('؟', ''), href: '#how' },
+                                    { label: t('welcome.pricing_title'), href: '#pricing' },
+                                    { label: t('welcome.faq_title'), href: '#faq' },
+                                ].map((link) => (
+                                    <a
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="rounded-xl px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-primary/5 hover:text-primary dark:hover:bg-primary/10"
+                                    >
+                                        {link.label}
+                                    </a>
+                                ))}
+
+                                <div className="my-2 h-px bg-border/40" />
+
+                                {auth.user ? (
+                                    <Link
+                                        href={dashboard()}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-md text-center"
+                                    >
+                                        {t('nav.dashboard')}
+                                    </Link>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <Link
+                                            href={login()}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="inline-flex h-10 w-full items-center justify-center rounded-full px-4 text-sm font-semibold text-muted-foreground transition hover:bg-primary/5 hover:text-primary dark:hover:bg-primary/10"
+                                        >
+                                            {t('auth.login')}
+                                        </Link>
+                                        <Link
+                                            href={register()}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-md text-center"
+                                        >
+                                            {t('auth.register')}
+                                        </Link>
+                                    </div>
+                                )}
+                            </nav>
+                        </div>
+                    )}
                 </header>
 
                 {/* Hero Section */}
-                <section className="flex w-full max-w-7xl flex-col items-center px-6 pt-12 pb-20 lg:pt-20 lg:pb-28">
+                <section className="flex w-full max-w-7xl flex-col items-center px-6 pt-28 pb-20 lg:pt-36 lg:pb-28">
                     <div className="grid w-full items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
                         {/* Hero Text Content */}
                         <div className="animate-fade-up space-y-8 text-center lg:text-start">
-                            {/* Badge Meta */}
-                            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-bold text-primary sm:text-sm">
-                                <Zap className="size-4 fill-primary/10 text-primary" />
-                                <span>{t('welcome.meta_verified')}</span>
-                            </div>
-
                             {/* Title with Gradient Accent */}
                             <h1 className="text-4xl leading-[1.15] font-black text-foreground sm:text-5xl sm:leading-[1.1] lg:text-6xl">
                                 {t('welcome.hero_title')}{' '}
@@ -331,110 +398,51 @@ export default function Welcome() {
                             </div>
                         </div>
 
-                        {/* Hero Graphic: Mock Dashboard with Floating Cards */}
-                        <div className="relative mx-auto w-full max-w-[550px] pt-10 lg:max-w-none lg:pt-0">
-                            {/* Dotted background graphic for mockup */}
-                            <div className="bg-radial-gradient pointer-events-none absolute inset-0 size-full scale-110 from-primary/5 to-transparent" />
+                        {/* Hero Graphic: Logo Showcase */}
+                        <div className="relative mx-auto flex w-full max-w-[550px] items-center justify-center pt-10 lg:max-w-none lg:pt-0">
+                            {/* Radial glow behind logo */}
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[280px] rounded-full bg-primary/15 blur-[80px] sm:size-[380px] sm:blur-[100px]" />
+                            </div>
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[180px] rounded-full bg-purple-500/10 blur-[60px] sm:size-[250px] sm:blur-[80px]" />
+                            </div>
 
-                            {/* Mock Dashboard container code-based */}
-                            <div className="relative z-10 flex w-full flex-col gap-4 overflow-hidden rounded-3xl border border-border/80 bg-card p-6 shadow-2xl select-none">
-                                {/* Header bar */}
-                                <div className="flex items-center justify-between border-b border-border pb-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="size-3 rounded-full bg-red-400" />
-                                        <span className="size-3 rounded-full bg-yellow-400" />
-                                        <span className="size-3 rounded-full bg-green-400" />
-                                    </div>
-                                    <div className="text-xs font-bold tracking-wider text-muted-foreground">
-                                        {t('app.name')} Dashboard
-                                    </div>
-                                    <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary">
-                                        <Clock className="size-3" />
-                                        <span>LIVE</span>
-                                    </div>
+                            {/* Decorative orbit rings */}
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[300px] animate-[spin_40s_linear_infinite] rounded-full border border-dashed border-primary/15 sm:size-[420px]" />
+                            </div>
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[220px] animate-[spin_30s_linear_infinite_reverse] rounded-full border border-primary/10 sm:size-[320px]" />
+                            </div>
+
+                            {/* Orbiting small dots */}
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[300px] animate-[spin_25s_linear_infinite] sm:size-[420px]">
+                                    <span className="absolute top-0 left-1/2 size-2.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
+                                    <span className="absolute bottom-0 left-1/2 size-2 -translate-x-1/2 rounded-full bg-purple-400 shadow-[0_0_8px_oklch(0.72_0.18_300)]" />
                                 </div>
-
-                                {/* Active Connections Row */}
-                                <div className="space-y-2">
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                                        {t('nav.connections')}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-semibold">
-                                            <Facebook className="size-4 fill-blue-600 text-blue-600" />
-                                            <span>صفحة المتجر</span>
-                                            <span className="ms-auto size-2 rounded-full bg-emerald-500" />
-                                        </div>
-                                        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-semibold">
-                                            <Instagram className="size-4 text-pink-600" />
-                                            <span>@shop_brand</span>
-                                            <span className="ms-auto size-2 rounded-full bg-emerald-500" />
-                                        </div>
-                                    </div>
+                            </div>
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <div className="size-[220px] animate-[spin_20s_linear_infinite_reverse] sm:size-[320px]">
+                                    <span className="absolute top-1/2 left-0 size-2 -translate-y-1/2 rounded-full bg-accent" />
+                                    <span className="absolute top-1/2 right-0 size-1.5 -translate-y-1/2 rounded-full bg-pink-400" />
                                 </div>
+                            </div>
 
-                                {/* Rules Row */}
-                                <div className="space-y-2">
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                                        {t('nav.rules')}
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-xl border border-border/80 bg-muted/20 p-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                                <Zap className="size-4" />
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-xs font-bold">
-                                                    الاستفسار عن السعر
-                                                </div>
-                                                <div className="text-[10px] text-muted-foreground">
-                                                    عند كتابة: بكم، السعر،
-                                                    تفاصيل
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span className="rounded bg-primary/20 px-2 py-0.5 text-[9px] font-black text-primary">
-                                            رد عام + خاص
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Recent Activity Logs */}
-                                <div className="space-y-2">
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                                        سجل العمليات الأخير
-                                    </div>
-                                    <div className="space-y-1.5 text-xs">
-                                        <div className="flex items-center justify-between border-b border-border/50 py-1">
-                                            <span className="text-muted-foreground">
-                                                تعليق منشور: "بكم لو سمحت؟"
-                                            </span>
-                                            <span className="font-bold text-emerald-500">
-                                                تم الرد 💬
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between border-b border-border/50 py-1">
-                                            <span className="text-muted-foreground">
-                                                رسالة خاصة: "ارسل التفاصيل"
-                                            </span>
-                                            <span className="font-bold text-emerald-500">
-                                                تم الإرسال ✓
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between py-1">
-                                            <span className="text-muted-foreground">
-                                                إشارة ستوري (Mention)
-                                            </span>
-                                            <span className="font-bold text-emerald-500">
-                                                تم التفاعل 🌸
-                                            </span>
-                                        </div>
-                                    </div>
+                            {/* Main Logo Container */}
+                            <div className="relative z-10 flex min-h-[340px] items-center justify-center sm:min-h-[440px]">
+                                <div className="animate-float rounded-[2rem] border border-white/20 bg-white/80 p-3 shadow-2xl shadow-primary/20 backdrop-blur-sm dark:border-white/10 dark:bg-white/10 sm:rounded-[2.5rem] sm:p-4">
+                                    <img
+                                        src="/image.png"
+                                        alt={t('app.name')}
+                                        className="size-32 rounded-[1.5rem] object-contain sm:size-44 sm:rounded-[2rem]"
+                                    />
                                 </div>
                             </div>
 
                             {/* Floating Widget 1: Comment auto-reply (Top Right) */}
-                            <div className="absolute -top-4 -right-6 z-20 animate-float rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card">
+                            <div className="absolute -top-2 right-2 z-20 animate-float rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card sm:-top-4 sm:-right-6">
                                 <div className="flex items-center gap-2.5">
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
                                         <MessageSquare className="h-4 w-4" />
@@ -451,7 +459,7 @@ export default function Welcome() {
                             </div>
 
                             {/* Floating Widget 2: Private DM Sent (Middle Left) */}
-                            <div className="absolute top-[35%] -left-8 z-20 animate-[float_10s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card">
+                            <div className="absolute top-[35%] -left-2 z-20 animate-[float_10s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card sm:-left-8">
                                 <div className="flex items-center gap-2.5">
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-pink-500/10 text-pink-600">
                                         <Send className="h-4 w-4" />
@@ -467,8 +475,8 @@ export default function Welcome() {
                                 </div>
                             </div>
 
-                            {/* Floating Widget 3: Live Performance Chart (Bottom Center) */}
-                            <div className="absolute right-1/4 bottom-8 z-20 animate-[float_12s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card">
+                            {/* Floating Widget 3: Live Performance (Bottom Center) */}
+                            <div className="absolute right-1/4 bottom-2 z-20 animate-[float_12s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card sm:bottom-8">
                                 <div className="flex items-center gap-2.5">
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
                                         <BarChart3 className="h-4 w-4" />
@@ -485,7 +493,7 @@ export default function Welcome() {
                             </div>
 
                             {/* Floating Widget 4: Official Security API (Middle Right) */}
-                            <div className="absolute top-[65%] -right-10 z-20 animate-[float_9s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card">
+                            <div className="absolute top-[65%] -right-2 z-20 animate-[float_9s_ease-in-out_infinite] rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] glass-card sm:-right-10">
                                 <div className="flex items-center gap-2.5">
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
                                         <Shield className="h-4 w-4" />
@@ -766,7 +774,7 @@ export default function Welcome() {
                                                 <div className="animate-fade-in flex items-start gap-3 text-start">
                                                     <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10">
                                                         <img
-                                                            src="/ChatGPT Image 8 مايو 2026، 12_03_15 ص.png"
+                                                            src="/image.png"
                                                             alt="Bariq Bot"
                                                             className="size-full bg-white object-contain p-0.5"
                                                         />
@@ -814,7 +822,7 @@ export default function Welcome() {
                                         <div className="animate-fade-in flex items-start gap-3 text-start">
                                             <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10">
                                                 <img
-                                                    src="/ChatGPT Image 8 مايو 2026، 12_03_15 ص.png"
+                                                    src="/image.png"
                                                     alt="Bariq Bot"
                                                     className="size-full bg-white object-contain p-0.5"
                                                 />
@@ -983,14 +991,18 @@ export default function Welcome() {
                                             </div>
 
                                             <div className="mb-6">
-                                                <span className="text-4xl font-black text-foreground sm:text-5xl">
-                                                    {currentPrice}
+                                                <span className="text-4xl font-black text-foreground tabular-nums sm:text-5xl">
+                                                    {currentPrice.toLocaleString()}
                                                 </span>
                                                 <span className="ms-1 text-xs font-bold text-muted-foreground">
-                                                    ر.س{' '}
+                                                    {isRtl ? 'ل.س' : 'SYP'}{' '}
                                                     {billingCycle > 1
-                                                        ? ` / ${billingCycle} أشهر`
-                                                        : ' / شهرياً'}
+                                                        ? isRtl
+                                                            ? ` / ${billingCycle} أشهر`
+                                                            : ` / ${billingCycle} months`
+                                                        : isRtl
+                                                          ? ' / شهرياً'
+                                                          : ' / month'}
                                                 </span>
                                             </div>
 
@@ -1155,7 +1167,7 @@ export default function Welcome() {
                         <div className="flex items-center gap-2.5">
                             <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg border border-border/80 bg-white p-0.5">
                                 <img
-                                    src="/ChatGPT Image 8 مايو 2026، 12_03_15 ص.png"
+                                    src="/image.png"
                                     alt={t('app.name')}
                                     className="size-full object-contain"
                                 />
@@ -1174,13 +1186,25 @@ export default function Welcome() {
                         </div>
 
                         {/* Right Side: Links */}
-                        <div className="flex gap-6 font-semibold">
-                            <span className="cursor-pointer transition-colors hover:text-foreground">
+                        <div className="flex flex-wrap gap-4 sm:gap-6 font-semibold">
+                            <a
+                                href="/terms"
+                                className="transition-colors hover:text-foreground"
+                            >
                                 شروط الخدمة
-                            </span>
-                            <span className="cursor-pointer transition-colors hover:text-foreground">
+                            </a>
+                            <a
+                                href="/privacy"
+                                className="transition-colors hover:text-foreground"
+                            >
                                 سياسة الخصوصية
-                            </span>
+                            </a>
+                            <a
+                                href="/data-deletion"
+                                className="transition-colors hover:text-foreground"
+                            >
+                                حذف البيانات
+                            </a>
                         </div>
                     </div>
                 </footer>

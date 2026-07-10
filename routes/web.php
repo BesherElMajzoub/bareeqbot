@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\SubscriptionRequestController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\WebhookEventController;
@@ -13,6 +15,11 @@ use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+
+// Public legal pages (required for Meta app review / going live).
+Route::view('privacy', 'legal.privacy')->name('legal.privacy');
+Route::view('terms', 'legal.terms')->name('legal.terms');
+Route::view('data-deletion', 'legal.data-deletion')->name('legal.data-deletion');
 
 // Public — webhook verification (GET challenge) + signed event ingestion (POST).
 Route::middleware('throttle:meta-webhook')->group(function () {
@@ -50,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Platform admin.
     Route::middleware('platform.staff')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
         Route::get('subscription-requests', [SubscriptionRequestController::class, 'index'])
             ->name('subscription-requests.index');
         Route::post('subscription-requests/{subscriptionRequest}/approve', [SubscriptionRequestController::class, 'approve'])
@@ -65,6 +73,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('webhook-events', [WebhookEventController::class, 'index'])->name('webhook-events.index');
         Route::get('webhook-events/{webhookEvent}', [WebhookEventController::class, 'show'])->name('webhook-events.show');
+
+        Route::get('plans', [PlanController::class, 'index'])->name('plans.index');
+        Route::put('plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
     });
 });
 

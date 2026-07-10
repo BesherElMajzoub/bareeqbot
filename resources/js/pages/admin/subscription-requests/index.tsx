@@ -9,6 +9,7 @@ type Row = {
     status: string;
     created_at: string;
     payer_note: string | null;
+    reject_reason: string | null;
     tenant?: { name: string } | null;
     plan_price?: {
         duration_months: number;
@@ -78,6 +79,9 @@ export default function AdminSubscriptionRequests({ requests }: Props) {
                                         {t('billing.months')}
                                     </th>
                                     <th className="p-3 text-start">
+                                        {t('billing.notes')}
+                                    </th>
+                                    <th className="p-3 text-start">
                                         {t('billing.status')}
                                     </th>
                                     <th className="p-3 text-end"></th>
@@ -98,6 +102,49 @@ export default function AdminSubscriptionRequests({ requests }: Props) {
                                         <td className="p-3">
                                             {row.plan_price?.duration_months ??
                                                 '—'}
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex flex-col gap-1 text-xs">
+                                                {row.payer_note && (
+                                                    <div>
+                                                        <span className="me-1 font-semibold text-muted-foreground">
+                                                            {t(
+                                                                'billing.payer_note',
+                                                            )}
+                                                            :
+                                                        </span>
+                                                        <span className="text-foreground">
+                                                            {row.payer_note}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {row.status === 'rejected' &&
+                                                    row.reject_reason && (
+                                                        <div>
+                                                            <span className="me-1 font-semibold text-destructive">
+                                                                {t(
+                                                                    'admin.reject_reason',
+                                                                )}
+                                                                :
+                                                            </span>
+                                                            <span className="font-medium text-destructive">
+                                                                {
+                                                                    row.reject_reason
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                {!row.payer_note &&
+                                                    !(
+                                                        row.status ===
+                                                            'rejected' &&
+                                                        row.reject_reason
+                                                    ) && (
+                                                        <span className="text-muted-foreground">
+                                                            —
+                                                        </span>
+                                                    )}
+                                            </div>
                                         </td>
                                         <td className="p-3">
                                             <Badge

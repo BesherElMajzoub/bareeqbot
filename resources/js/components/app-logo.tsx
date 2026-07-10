@@ -3,7 +3,7 @@ export default function AppLogo() {
         <>
             <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5">
                 <img
-                    src="/ChatGPT Image 8 مايو 2026، 12_03_15 ص.png"
+                    src="/image.png"
                     alt="بريق"
                     className="size-full object-contain"
                 />

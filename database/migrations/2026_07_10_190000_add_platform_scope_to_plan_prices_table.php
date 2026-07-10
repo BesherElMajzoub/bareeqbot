@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::table('plan_prices', function (Blueprint $table) {
             $table->string('platform_scope')->default('facebook')->after('duration_months');
         });
@@ -23,10 +25,14 @@ return new class extends Migration
         Schema::table('plan_prices', function (Blueprint $table) {
             $table->dropUnique(['plan_id', 'duration_months', 'currency']);
         });
+
+        Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::table('plan_prices', function (Blueprint $table) {
             $table->unique(['plan_id', 'duration_months', 'currency']);
         });
@@ -38,5 +44,7 @@ return new class extends Migration
         Schema::table('plan_prices', function (Blueprint $table) {
             $table->dropColumn('platform_scope');
         });
+
+        Schema::enableForeignKeyConstraints();
     }
 };

@@ -9,6 +9,7 @@ import {
     Link2,
     Users,
     Webhook,
+    Package,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -24,10 +25,11 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
-import { analytics as adminAnalytics } from '@/routes/admin';
+import { analytics as adminAnalytics, dashboard as adminDashboard } from '@/routes/admin';
 import subscriptionRequests from '@/routes/admin/subscription-requests';
 import tenants from '@/routes/admin/tenants';
 import webhookEvents from '@/routes/admin/webhook-events';
+import plans from '@/routes/admin/plans';
 import analytics from '@/routes/analytics';
 import billing from '@/routes/billing';
 import connections from '@/routes/connections';
@@ -48,12 +50,14 @@ export function AppSidebar() {
     ];
 
     const adminNavItems: NavItem[] = [
+        { title: t('admin.dashboard'), href: adminDashboard(), icon: LayoutGrid },
         {
             title: t('admin.subscription_requests'),
             href: subscriptionRequests.index(),
             icon: ClipboardList,
         },
         { title: t('admin.tenants'), href: tenants.index(), icon: Users },
+        { title: t('admin.plans'), href: plans.index(), icon: Package },
         { title: t('admin.analytics'), href: adminAnalytics(), icon: Gauge },
         {
             title: t('admin.webhook_events'),
@@ -68,7 +72,14 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link
+                                href={
+                                    isStaff
+                                        ? adminDashboard()
+                                        : dashboard()
+                                }
+                                prefetch
+                            >
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -77,7 +88,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} label={t('nav.main')} />
+                {!isStaff && (
+                    <NavMain items={mainNavItems} label={t('nav.main')} />
+                )}
                 {isStaff && (
                     <NavMain items={adminNavItems} label={t('nav.admin')} />
                 )}

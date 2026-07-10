@@ -14,7 +14,7 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         if ($user !== null && $user->is_platform_staff) {
-            return redirect()->route('admin.subscription-requests.index');
+            return redirect()->route('admin.dashboard');
         }
 
         $tenant = $tenantContext->current();
