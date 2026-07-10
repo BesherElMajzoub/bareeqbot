@@ -24,7 +24,7 @@ import { dashboard, login, register } from '@/routes';
 
 export default function Welcome() {
     const { auth } = usePage().props;
-    const { t, direction } = useTranslations();
+    const { t, locale, direction } = useTranslations();
     const { resolvedAppearance, updateAppearance } = useAppearance();
 
     // State for Billing Cycle (1 = Monthly, 3 = Quarterly, 6 = Semi-Annual, 12 = Annual)
@@ -161,11 +161,11 @@ export default function Welcome() {
                         {/* Middle Links - Desktop */}
                         <nav className="hidden items-center gap-1 lg:flex">
                             {[
-                                { label: t('welcome.features_title'), href: '#features' },
-                                { label: t('welcome.demo_title').replace(' الآن!', ''), href: '#demo' },
-                                { label: t('welcome.how_title').replace('؟', ''), href: '#how' },
-                                { label: t('welcome.pricing_title'), href: '#pricing' },
-                                { label: t('welcome.faq_title'), href: '#faq' },
+                                { label: t('welcome.nav.features', 'Features'), href: '#features' },
+                                { label: t('welcome.nav.demo', 'Live Demo'), href: '#demo' },
+                                { label: t('welcome.nav.how', 'How it Works'), href: '#how' },
+                                { label: t('welcome.nav.pricing', 'Pricing'), href: '#pricing' },
+                                { label: t('welcome.nav.faq', 'FAQ'), href: '#faq' },
                             ].map((link) => (
                                 <a
                                     key={link.href}
@@ -179,6 +179,19 @@ export default function Welcome() {
 
                         {/* Action buttons + Theme Toggler */}
                         <div className="hidden md:flex items-center gap-2.5">
+                            {/* Language Switcher */}
+                            <button
+                                onClick={() => {
+                                    const nextLocale = locale === 'ar' ? 'en' : 'ar';
+                                    document.cookie = `locale=${nextLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
+                                    window.location.reload();
+                                }}
+                                className="flex h-9 px-3 items-center justify-center rounded-full border border-border bg-card text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                aria-label="Toggle Language"
+                            >
+                                {locale === 'ar' ? 'EN' : 'عربي'}
+                            </button>
+
                             {/* Theme Toggler */}
                             <button
                                 onClick={() =>
@@ -225,6 +238,19 @@ export default function Welcome() {
 
                         {/* Mobile controls (Menu and Theme) */}
                         <div className="flex items-center gap-2 lg:hidden">
+                            {/* Language Switcher for mobile */}
+                            <button
+                                onClick={() => {
+                                    const nextLocale = locale === 'ar' ? 'en' : 'ar';
+                                    document.cookie = `locale=${nextLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
+                                    window.location.reload();
+                                }}
+                                className="flex h-9 px-3 items-center justify-center rounded-full border border-border bg-card text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                aria-label="Toggle Language"
+                            >
+                                {locale === 'ar' ? 'EN' : 'عربي'}
+                            </button>
+
                             {/* Theme Toggler for mobile */}
                             <button
                                 onClick={() =>
@@ -264,11 +290,11 @@ export default function Welcome() {
                         <div className="mt-2 rounded-3xl border border-border/40 bg-background/95 p-4 shadow-[0_18px_45px_rgba(76,29,149,0.08)] backdrop-blur-xl transition-all duration-300 dark:bg-card/95 lg:hidden">
                             <nav className="flex flex-col gap-1.5">
                                 {[
-                                    { label: t('welcome.features_title'), href: '#features' },
-                                    { label: t('welcome.demo_title').replace(' الآن!', ''), href: '#demo' },
-                                    { label: t('welcome.how_title').replace('؟', ''), href: '#how' },
-                                    { label: t('welcome.pricing_title'), href: '#pricing' },
-                                    { label: t('welcome.faq_title'), href: '#faq' },
+                                    { label: t('welcome.nav.features', 'Features'), href: '#features' },
+                                    { label: t('welcome.nav.demo', 'Live Demo'), href: '#demo' },
+                                    { label: t('welcome.nav.how', 'How it Works'), href: '#how' },
+                                    { label: t('welcome.nav.pricing', 'Pricing'), href: '#pricing' },
+                                    { label: t('welcome.nav.faq', 'FAQ'), href: '#faq' },
                                 ].map((link) => (
                                     <a
                                         key={link.href}
@@ -447,12 +473,12 @@ export default function Welcome() {
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
                                         <MessageSquare className="h-4 w-4" />
                                     </span>
-                                    <div className="text-right">
+                                    <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            الرد التلقائي
+                                            {t('welcome.hero.widget.autoreply.title')}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            تعليق مؤتمت ✓
+                                            {t('welcome.hero.widget.autoreply.desc')}
                                         </div>
                                     </div>
                                 </div>
@@ -464,12 +490,12 @@ export default function Welcome() {
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-pink-500/10 text-pink-600">
                                         <Send className="h-4 w-4" />
                                     </span>
-                                    <div className="text-right">
+                                    <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            رسالة خاصة DM
+                                            {t('welcome.hero.widget.dm.title')}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            تفاصيل السعر 💬
+                                            {t('welcome.hero.widget.dm.desc')}
                                         </div>
                                     </div>
                                 </div>
@@ -481,12 +507,12 @@ export default function Welcome() {
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
                                         <BarChart3 className="h-4 w-4" />
                                     </span>
-                                    <div className="text-right">
+                                    <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            معدل التفاعل
+                                            {t('welcome.hero.widget.engagement.title')}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            +48.2% 📈
+                                            {t('welcome.hero.widget.engagement.desc')}
                                         </div>
                                     </div>
                                 </div>
@@ -498,12 +524,12 @@ export default function Welcome() {
                                     <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
                                         <Shield className="h-4 w-4" />
                                     </span>
-                                    <div className="text-right">
+                                    <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            الأمان والموثوقية
+                                            {t('welcome.hero.widget.security.title')}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            ربط رسمي Meta 🔒
+                                            {t('welcome.hero.widget.security.desc')}
                                         </div>
                                     </div>
                                 </div>

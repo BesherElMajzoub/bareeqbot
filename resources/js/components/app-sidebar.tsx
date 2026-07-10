@@ -37,7 +37,7 @@ import rules from '@/routes/rules';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { t } = useTranslations();
+    const { t, direction } = useTranslations();
     const { auth } = usePage().props;
     const isStaff = Boolean(auth.user?.is_platform_staff);
 
@@ -67,7 +67,7 @@ export function AppSidebar() {
     ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset" side="right">
+        <Sidebar collapsible="icon" variant="inset" side={direction === 'rtl' ? 'right' : 'left'}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
