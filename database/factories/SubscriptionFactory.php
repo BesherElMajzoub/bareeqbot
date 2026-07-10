@@ -23,7 +23,7 @@ class SubscriptionFactory extends Factory
             'plan_id' => Plan::factory(),
             'duration_months' => 1,
             'price' => 99,
-            'currency' => 'SAR',
+            'currency' => 'SYP',
             'starts_at' => now(),
             'ends_at' => now()->addMonth(),
             'status' => SubscriptionStatus::Active,

@@ -75,6 +75,17 @@ class Tenant extends Model
         return $this->hasMany(SubscriptionRequest::class)->withoutGlobalScope(TenantScope::class);
     }
 
+    /**
+     * Channel connections for this tenant. Scope bypassed so it's usable
+     * from any context (e.g. platform admin acting across tenants).
+     *
+     * @return HasMany<ChannelConnection, $this>
+     */
+    public function channelConnections(): HasMany
+    {
+        return $this->hasMany(ChannelConnection::class)->withoutGlobalScope(TenantScope::class);
+    }
+
     public function activeSubscription(): ?Subscription
     {
         return $this->subscriptions()

@@ -1,13 +1,11 @@
 <?php
 
-use App\Models\User;
-
 test('guests are redirected to the login page', function () {
     $this->get(route('dashboard'))->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $this->actingAs(User::factory()->create());
+test('a tenant owner can visit the dashboard', function () {
+    [$user] = createTenantOwner();
 
-    $this->get(route('dashboard'))->assertOk();
+    $this->actingAs($user)->get(route('dashboard'))->assertOk();
 });

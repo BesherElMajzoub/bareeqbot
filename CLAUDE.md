@@ -21,10 +21,15 @@ behavior.** Follow it. Ask before inventing behavior it does not specify. Build 
 - **Auth**: **Fortify** (email verification, 2FA, passkeys). No Sanctum — the dashboard is a
   server-rendered Inertia SPA.
 - **Testing**: **Pest** (`tests/Pest.php` binds `TestCase` + `RefreshDatabase`).
-- **Queue**: `database` for now. Every outbound Meta call and webhook is wrapped in a Job so we can
-  switch to **Redis + Horizon** with an `.env` change in the Hardening phase.
-- **Packages**: `spatie/laravel-permission` (roles, teams-enabled), `spatie/laravel-data` (DTOs).
-  `spatie/laravel-query-builder` + `laravel/horizon` are deferred to their phases.
+- **Queue**: `database` (active default). Every outbound Meta call and webhook is wrapped in a Job.
+  `predis/predis` is installed (pure-PHP Redis client) and `config/queue.php`'s `redis` connection is
+  ready — switch via `QUEUE_CONNECTION=redis` in production. **`laravel/horizon` is NOT installed**:
+  it requires `ext-pcntl`/`ext-posix`, which do not exist on Windows PHP builds at all (not a config
+  gap — Horizon cannot run on this dev machine under any configuration). Install it in the
+  Linux/WSL/Docker production environment: `composer require laravel/horizon`, then
+  `php artisan horizon:install` and gate the dashboard to `super_admin` only.
+- **Packages**: `spatie/laravel-permission` (roles, teams-enabled), `spatie/laravel-data` (DTOs),
+  `spatie/laravel-query-builder` (filtered admin/analytics listings), `predis/predis`.
 
 ## Commands
 
@@ -129,15 +134,39 @@ Meta work on queues with retries; webhook endpoint returns fast; replies idempot
 2. **Manual billing** ✅ — subscription requests, admin approve/reject, subscription lifecycle,
    `subscriptions:expire` (scheduled daily), `SubscriptionQuota` service, `BillingProvider` seam
    (`ManualProvider`), `/admin` review guarded by `platform.staff`. *(done)*
-3. **Meta OAuth connect** — Facebook Login, page/IG selection, encrypted token storage, webhook
-   subscription on connect, quota enforcement.
-4. **Webhook ingestion** — `GET/POST /webhooks/meta`, challenge, HMAC verify, raw store, queue job,
-   tenant resolution, dedupe scaffolding.
-5. **Rule engine + FB comment replies** — rules CRUD, `RuleMatcher`, `ReplyDispatcher`
-   (public + private reply), idempotent `reply_logs`.
-6. **Instagram comments + Stories** — IG comment replies, story_reply + story_mention DM pipelines.
-7. **Analytics** — `reply_logs` surfacing, nightly `stats:aggregate`, tenant + admin dashboards.
-8. **Hardening** — admin polish, rate limits, Redis + Horizon, token refresh/revocation, full Pest pass.
+3. **Meta OAuth connect** ✅ — Facebook Login for Business, page/IG selection, `encrypted`
+   `ChannelConnection.access_token`, `MetaGraphClient`/`FacebookOAuthService`, webhook subscription on
+   connect, quota enforcement. *(done)*
+4. **Webhook ingestion** ✅ — `GET /webhooks/meta` challenge + signed `POST` (`meta.signature`
+   HMAC middleware) → raw `webhook_events` store → `ProcessMetaWebhook` job → `MetaWebhookParser`
+   (normalized `IncomingWebhookEvent` DTOs) → tenant resolved from asset id via
+   `ChannelConnectionResolver`, self-authored skip, active-subscription gate, event-level idempotency.
+   Rule matching/replies are the Phase 5 seam. *(done)*
+5. **Rule engine + FB comment replies** ✅ — `automation_rules`/`rule_actions`/`reply_logs`, rules
+   CRUD (`manage-rules`), `RuleMatcher` (priority + target scope + any/exact/contains/regex),
+   `ReplyDispatcher` → queued idempotent `SendReply` (unique `reply_logs (platform,
+   source_object_id, action_type)`), `TemplateRenderer` (`{{placeholder}}`), wired into
+   `ProcessMetaWebhook`. *(done)*
+6. **Instagram comments + Stories** ✅ — IG comment replies (`/replies` edge), `story_reply` +
+   `story_mention` → `RuleActionType::Dm` via `MetaGraphClient::sendDirectMessage` (Send API),
+   `reply_logs.parent_ref` stores the story/media reference. *(done)*
+7. **Analytics** ✅ — `AnalyticsService` (live counters from `reply_logs`: summary, daily series,
+   top rules), nightly `stats:aggregate` → `daily_stats` (idempotent per date), tenant dashboard +
+   `/admin/analytics` (platform-wide), filtered reply log (`spatie/laravel-query-builder`) at
+   `/analytics/logs`. *(done)*
+8. **Hardening** ✅ — admin polish (`/admin/tenants` suspend/activate — a real kill switch checked in
+   `ProcessMetaWebhook`; read-only `/admin/webhook-events` inspector; full sidebar nav wired to every
+   tenant + admin page, admin section gated on `is_platform_staff`), rate limiting (`meta-webhook`
+   named limiter, 300/min/IP, on both webhook routes; Fortify already throttles login/2FA/passkeys),
+   Redis + Horizon seam (see Tech stack note — `predis` installed, Horizon deferred to a POSIX
+   environment), token refresh/revocation (`MetaApiException::isAuthError()` → `MarkConnectionError`
+   marks the connection `error` + notifies the owner once, from `SendReply`; `DisconnectChannel` now
+   also calls `MetaGraphClient::unsubscribeAppFromPage` on manual disconnect), full Pest pass
+   (143 tests) + `npm run lint:check` + `format:check` + `types:check` all clean. *(done)*
+
+All 8 phases are complete. Remaining follow-ups are explicitly deferred, not gaps: an automated
+payment gateway behind `BillingProvider`, multi-step conversational flows, WhatsApp, and running
+Horizon (needs a POSIX host).
 
 ## Definition of done (per phase)
 

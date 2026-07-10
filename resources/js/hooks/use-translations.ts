@@ -8,7 +8,8 @@ import { usePage } from '@inertiajs/react';
 export function useTranslations() {
     const { translations, locale, direction } = usePage().props;
 
-    const t = (key: string, fallback?: string): string => translations[key] ?? fallback ?? key;
+    const t = (key: string, fallback?: string): string =>
+        translations[key] ?? fallback ?? key;
 
     return { t, locale, direction };
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Billing\CancelSubscription;
 use App\Actions\Billing\SubmitSubscriptionRequest;
+use App\Http\Requests\Billing\CancelSubscriptionRequest;
 use App\Http\Requests\Billing\StoreSubscriptionRequestRequest;
 use App\Models\Plan;
 use App\Models\PlanPrice;
@@ -47,6 +49,24 @@ class BillingController extends Controller
         $submit->handle($tenant, $planPrice, $request->input('payer_note'), $proofPath ?: null);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('billing.request_submitted')]);
+
+        return to_route('billing.index');
+    }
+
+    public function cancel(
+        CancelSubscriptionRequest $request,
+        CancelSubscription $cancel,
+        TenantContext $tenantContext,
+    ): RedirectResponse {
+        $tenant = $tenantContext->current();
+        abort_if($tenant === null, 403);
+
+        $subscription = $tenant->activeSubscription();
+        abort_if($subscription === null, 404);
+
+        $cancel->handle($subscription);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('billing.cancelled')]);
 
         return to_route('billing.index');
     }

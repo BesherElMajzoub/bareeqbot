@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsurePlatformStaff;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentTenant;
+use App\Http\Middleware\VerifyMetaWebhookSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,8 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Webhook endpoint: CSRF verification is not applicable (Meta signs with X-Hub-Signature-256).
+        $middleware->validateCsrfTokens(except: ['webhooks/meta']);
+
         $middleware->alias([
             'platform.staff' => EnsurePlatformStaff::class,
+            'meta.signature' => VerifyMetaWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

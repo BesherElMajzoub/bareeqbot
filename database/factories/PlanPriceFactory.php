@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PlanPlatformScope;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,8 +19,9 @@ class PlanPriceFactory extends Factory
         return [
             'plan_id' => Plan::factory(),
             'duration_months' => fake()->randomElement([1, 3, 6, 12]),
+            'platform_scope' => fake()->randomElement(PlanPlatformScope::cases()),
             'price' => fake()->randomFloat(2, 10, 1000),
-            'currency' => 'SAR',
+            'currency' => 'SYP',
             'is_active' => true,
         ];
     }

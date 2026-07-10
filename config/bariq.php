@@ -46,7 +46,7 @@ return [
 
     'billing' => [
         'provider' => env('BARIQ_BILLING_PROVIDER', 'manual'),
-        'currency' => env('BARIQ_BILLING_CURRENCY', 'SAR'),
+        'currency' => env('BARIQ_BILLING_CURRENCY', 'SYP'),
         'proof_disk' => env('BARIQ_BILLING_PROOF_DISK', 'local'),
     ],
 
