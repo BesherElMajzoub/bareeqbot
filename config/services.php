@@ -41,7 +41,7 @@ return [
     | live Meta docs at build time.
     */
     'meta' => [
-        'graph_version' => env('META_GRAPH_VERSION', 'v23.0'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v25.0'),
         'app_id' => env('META_APP_ID'),
         'app_secret' => env('META_APP_SECRET'),
         'webhook_verify_token' => env('META_WEBHOOK_VERIFY_TOKEN'),
