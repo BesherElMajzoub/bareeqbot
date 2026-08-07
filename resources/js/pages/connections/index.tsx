@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import billing from '@/routes/billing';
 import connections from '@/routes/connections';
 
 type ChannelConnection = {
@@ -16,9 +17,12 @@ type ChannelConnection = {
     created_at: string;
 };
 
+type BlockReason = 'no_subscription' | 'quota_exceeded' | null;
+
 type Props = {
     connections: ChannelConnection[];
     quota: { used: number; max: number };
+    blockReason: BlockReason;
 };
 
 const platformLabel = (
@@ -46,7 +50,11 @@ const statusVariant = (
 const statusLabel = (status: string, t: (k: string) => string) =>
     t(`connections.status_${status}`) ?? status;
 
-export default function ConnectionsIndex({ connections: items, quota }: Props) {
+export default function ConnectionsIndex({
+    connections: items,
+    quota,
+    blockReason,
+}: Props) {
     const { t } = useTranslations();
 
     const disconnect = (id: number) => {
@@ -70,12 +78,44 @@ export default function ConnectionsIndex({ connections: items, quota }: Props) {
                     <h1 className="text-2xl font-semibold tracking-tight">
                         {t('connections.title')}
                     </h1>
-                    <Button asChild>
-                        <a href={connections.facebook.redirect().url}>
+                    {blockReason ? (
+                        <Button disabled>
                             {t('connections.connect_facebook')}
-                        </a>
-                    </Button>
+                        </Button>
+                    ) : (
+                        <Button asChild>
+                            <a href={connections.facebook.redirect().url}>
+                                {t('connections.connect_facebook')}
+                            </a>
+                        </Button>
+                    )}
                 </div>
+
+                {blockReason && (
+                    <Card className="border-amber-500/40 bg-amber-50/60 dark:bg-amber-950/20">
+                        <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
+                            <div className="space-y-1">
+                                <p className="font-medium">
+                                    {blockReason === 'no_subscription'
+                                        ? t('connections.no_subscription_title')
+                                        : t('connections.quota_exceeded_title')}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {blockReason === 'no_subscription'
+                                        ? t('connections.requires_subscription')
+                                        : t('connections.quota_exceeded')}
+                                </p>
+                            </div>
+                            <Button asChild>
+                                <a href={billing.index().url}>
+                                    {blockReason === 'no_subscription'
+                                        ? t('connections.go_to_billing')
+                                        : t('connections.upgrade_plan')}
+                                </a>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Quota bar */}
                 <Card>

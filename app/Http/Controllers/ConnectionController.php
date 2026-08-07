@@ -9,6 +9,7 @@ use App\Enums\ChannelPlatform;
 use App\Exceptions\QuotaExceededException;
 use App\Http\Requests\Connections\StoreConnectionRequest;
 use App\Models\ChannelConnection;
+use App\Models\Tenant;
 use App\Services\Billing\SubscriptionQuota;
 use App\Services\Meta\FacebookOAuthService;
 use App\Services\Meta\MetaApiException;
@@ -44,6 +45,7 @@ class ConnectionController extends Controller
 
         return Inertia::render('connections/index', [
             'connections' => $connections,
+            'blockReason' => $this->blockReason($tenant, $quota),
             'quota' => [
                 'used' => $quota->usedPages($tenant),
                 'max' => $quota->maxPages($tenant),
@@ -55,9 +57,16 @@ class ConnectionController extends Controller
      * Generate the Facebook Login for Business authorization URL and redirect.
      * Stores a CSRF state token in the session.
      */
-    public function redirect(FacebookOAuthService $oauth): RedirectResponse
-    {
-        $this->authorize('create', ChannelConnection::class);
+    public function redirect(
+        FacebookOAuthService $oauth,
+        TenantContext $tenantContext,
+        SubscriptionQuota $quota,
+    ): RedirectResponse {
+        $this->authorize('viewAny', ChannelConnection::class);
+
+        if ($blocked = $this->redirectIfCannotConnect($tenantContext, $quota)) {
+            return $blocked;
+        }
 
         $state = Str::random(40);
         session(['meta_oauth_state' => $state]);
@@ -72,9 +81,17 @@ class ConnectionController extends Controller
      * 2. Exchange code → long-lived token → fetch pages.
      * 3. Store the result in session and render the asset picker page.
      */
-    public function callback(Request $request, FacebookOAuthService $oauth): Response|RedirectResponse
-    {
-        $this->authorize('create', ChannelConnection::class);
+    public function callback(
+        Request $request,
+        FacebookOAuthService $oauth,
+        TenantContext $tenantContext,
+        SubscriptionQuota $quota,
+    ): Response|RedirectResponse {
+        $this->authorize('viewAny', ChannelConnection::class);
+
+        if ($blocked = $this->redirectIfCannotConnect($tenantContext, $quota)) {
+            return $blocked;
+        }
 
         // CSRF guard.
         if ($request->input('state') !== session('meta_oauth_state')) {
@@ -181,5 +198,48 @@ class ConnectionController extends Controller
         ]);
 
         return redirect()->route('connections.index');
+    }
+
+    /**
+     * Why the tenant cannot connect another channel right now, if anything.
+     *
+     * Drives the notice shown on the connections page so the user sees the
+     * reason up front instead of hitting a bare 403 on the connect button.
+     *
+     * @return 'no_subscription'|'quota_exceeded'|null
+     */
+    private function blockReason(Tenant $tenant, SubscriptionQuota $quota): ?string
+    {
+        if (! $quota->hasActiveSubscription($tenant)) {
+            return 'no_subscription';
+        }
+
+        if (! $quota->canConnectMore($tenant)) {
+            return 'quota_exceeded';
+        }
+
+        return null;
+    }
+
+    /**
+     * Guard the OAuth entry points. Lacking the `manage-connections` permission
+     * is a real authorization failure (403, handled by the policy). Lacking a
+     * subscription or having filled the quota is an expected business state —
+     * send the user somewhere useful with an explanation instead.
+     */
+    private function redirectIfCannotConnect(
+        TenantContext $tenantContext,
+        SubscriptionQuota $quota,
+    ): ?RedirectResponse {
+        $tenant = $tenantContext->current();
+        abort_if($tenant === null, 403);
+
+        return match ($this->blockReason($tenant, $quota)) {
+            'no_subscription' => redirect()->route('billing.index')
+                ->with('toast', ['type' => 'error', 'message' => __('connections.requires_subscription')]),
+            'quota_exceeded' => redirect()->route('connections.index')
+                ->with('toast', ['type' => 'error', 'message' => __('connections.quota_exceeded')]),
+            default => null,
+        };
     }
 }

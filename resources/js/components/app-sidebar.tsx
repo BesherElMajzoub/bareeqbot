@@ -25,11 +25,14 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
-import { analytics as adminAnalytics, dashboard as adminDashboard } from '@/routes/admin';
+import {
+    analytics as adminAnalytics,
+    dashboard as adminDashboard,
+} from '@/routes/admin';
+import plans from '@/routes/admin/plans';
 import subscriptionRequests from '@/routes/admin/subscription-requests';
 import tenants from '@/routes/admin/tenants';
 import webhookEvents from '@/routes/admin/webhook-events';
-import plans from '@/routes/admin/plans';
 import analytics from '@/routes/analytics';
 import billing from '@/routes/billing';
 import connections from '@/routes/connections';
@@ -50,7 +53,11 @@ export function AppSidebar() {
     ];
 
     const adminNavItems: NavItem[] = [
-        { title: t('admin.dashboard'), href: adminDashboard(), icon: LayoutGrid },
+        {
+            title: t('admin.dashboard'),
+            href: adminDashboard(),
+            icon: LayoutGrid,
+        },
         {
             title: t('admin.subscription_requests'),
             href: subscriptionRequests.index(),
@@ -67,17 +74,17 @@ export function AppSidebar() {
     ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset" side={direction === 'rtl' ? 'right' : 'left'}>
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            side={direction === 'rtl' ? 'right' : 'left'}
+        >
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link
-                                href={
-                                    isStaff
-                                        ? adminDashboard()
-                                        : dashboard()
-                                }
+                                href={isStaff ? adminDashboard() : dashboard()}
                                 prefetch
                             >
                                 <AppLogo />

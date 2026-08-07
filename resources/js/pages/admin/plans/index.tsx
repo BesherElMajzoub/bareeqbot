@@ -50,10 +50,14 @@ export default function AdminPlans({ plans }: Props) {
         duration: number,
         scope: 'facebook' | 'facebook_instagram',
     ) => {
-        if (!plan) return '';
+        if (!plan) {
+            return '';
+        }
+
         const priceObj = plan.prices.find(
             (p) => p.duration_months === duration && p.platform_scope === scope,
         );
+
         return priceObj ? priceObj.price : '0';
     };
 
@@ -100,7 +104,10 @@ export default function AdminPlans({ plans }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!editingPlan) return;
+
+        if (!editingPlan) {
+            return;
+        }
 
         put(plansRoutes.update(editingPlan.id).url, {
             onSuccess: () => setEditingPlan(null),
@@ -109,11 +116,13 @@ export default function AdminPlans({ plans }: Props) {
 
     const formatPriceDisplay = (price: string, currency: string) => {
         const formattedNum = Number(price).toLocaleString();
+
         if (currency === 'SYP') {
             return locale === 'ar'
                 ? `${formattedNum} ل.س`
                 : `${formattedNum} SYP`;
         }
+
         return `${formattedNum} ${currency}`;
     };
 

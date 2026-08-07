@@ -1,11 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import React, { useState } from 'react';
 import { Check, X } from 'lucide-react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -14,6 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
 import billing from '@/routes/billing';
 
@@ -108,7 +108,10 @@ export default function BillingIndex({
     };
 
     const subscribe = () => {
-        if (!confirmingPrice) return;
+        if (!confirmingPrice) {
+            return;
+        }
+
         router.post(
             billing.requests.store().url,
             {
@@ -134,15 +137,23 @@ export default function BillingIndex({
 
     const formatChannels = (count: number, lang: string) => {
         if (lang === 'ar') {
-            if (count === 1) return 'قناة واحدة';
-            if (count <= 10) return `${count} قنوات`;
+            if (count === 1) {
+                return 'قناة واحدة';
+            }
+
+            if (count <= 10) {
+                return `${count} قنوات`;
+            }
+
             return `${count} قناة`;
         }
+
         return `${count} ${count === 1 ? 'channel' : 'channels'}`;
     };
 
     const getFeatureValue = (featureKey: string, plan: Plan) => {
         const slug = plan.slug;
+
         switch (featureKey) {
             case 'allowed_pages':
                 return formatChannels(plan.max_pages, locale);
@@ -157,16 +168,32 @@ export default function BillingIndex({
                     ? t('billing.feature_value_basic')
                     : t('billing.feature_value_advanced');
             case 'analytics':
-                if (slug === 'starter') return false;
-                if (slug === 'growth') return t('billing.feature_value_medium');
-                if (slug === 'business')
+                if (slug === 'starter') {
+                    return false;
+                }
+
+                if (slug === 'growth') {
+                    return t('billing.feature_value_medium');
+                }
+
+                if (slug === 'business') {
                     return t('billing.feature_value_detailed');
+                }
+
                 return t('billing.feature_value_custom');
             case 'support':
-                if (slug === 'starter') return t('billing.feature_value_email');
-                if (slug === 'growth') return t('billing.feature_value_fast');
-                if (slug === 'business')
+                if (slug === 'starter') {
+                    return t('billing.feature_value_email');
+                }
+
+                if (slug === 'growth') {
+                    return t('billing.feature_value_fast');
+                }
+
+                if (slug === 'business') {
                     return t('billing.feature_value_premium');
+                }
+
                 return t('billing.feature_value_dedicated');
             default:
                 return false;
@@ -202,14 +229,17 @@ export default function BillingIndex({
         lang: string,
     ) => {
         const formattedNum = Number(price).toLocaleString();
+
         if (currency === 'SYP') {
             return lang === 'ar'
                 ? `${formattedNum} ل.س`
                 : `${formattedNum} SYP`;
         }
+
         if (currency === 'USD') {
             return `$${formattedNum}`;
         }
+
         return `${formattedNum} ${currency}`;
     };
 
@@ -229,11 +259,14 @@ export default function BillingIndex({
                 </div>
             );
         }
+
         return <span className="text-sm font-medium">{value}</span>;
     };
 
     const getConfirmationMessage = () => {
-        if (!confirmingPrice) return '';
+        if (!confirmingPrice) {
+            return '';
+        }
 
         const planStr = confirmingPrice.planName;
         const durationStr = confirmingPrice.duration.toString();
@@ -417,6 +450,7 @@ export default function BillingIndex({
                                                     (scope, scopeIdx) => {
                                                         const showDurationCell =
                                                             scopeIdx === 0;
+
                                                         return (
                                                             <React.Fragment
                                                                 key={`${duration}-${scope}`}
@@ -449,6 +483,7 @@ export default function BillingIndex({
                                                                                     duration,
                                                                                     scope,
                                                                                 );
+
                                                                             return (
                                                                                 <td
                                                                                     key={

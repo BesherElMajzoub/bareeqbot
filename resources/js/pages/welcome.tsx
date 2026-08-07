@@ -4,7 +4,6 @@ import {
     MessageSquare,
     Shield,
     BarChart3,
-    Zap,
     Sun,
     Moon,
     ChevronDown,
@@ -161,11 +160,29 @@ export default function Welcome() {
                         {/* Middle Links - Desktop */}
                         <nav className="hidden items-center gap-1 lg:flex">
                             {[
-                                { label: t('welcome.nav.features', 'Features'), href: '#features' },
-                                { label: t('welcome.nav.demo', 'Live Demo'), href: '#demo' },
-                                { label: t('welcome.nav.how', 'How it Works'), href: '#how' },
-                                { label: t('welcome.nav.pricing', 'Pricing'), href: '#pricing' },
-                                { label: t('welcome.nav.faq', 'FAQ'), href: '#faq' },
+                                {
+                                    label: t(
+                                        'welcome.nav.features',
+                                        'Features',
+                                    ),
+                                    href: '#features',
+                                },
+                                {
+                                    label: t('welcome.nav.demo', 'Live Demo'),
+                                    href: '#demo',
+                                },
+                                {
+                                    label: t('welcome.nav.how', 'How it Works'),
+                                    href: '#how',
+                                },
+                                {
+                                    label: t('welcome.nav.pricing', 'Pricing'),
+                                    href: '#pricing',
+                                },
+                                {
+                                    label: t('welcome.nav.faq', 'FAQ'),
+                                    href: '#faq',
+                                },
                             ].map((link) => (
                                 <a
                                     key={link.href}
@@ -178,15 +195,16 @@ export default function Welcome() {
                         </nav>
 
                         {/* Action buttons + Theme Toggler */}
-                        <div className="hidden md:flex items-center gap-2.5">
+                        <div className="hidden items-center gap-2.5 md:flex">
                             {/* Language Switcher */}
                             <button
                                 onClick={() => {
-                                    const nextLocale = locale === 'ar' ? 'en' : 'ar';
+                                    const nextLocale =
+                                        locale === 'ar' ? 'en' : 'ar';
                                     document.cookie = `locale=${nextLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
                                     window.location.reload();
                                 }}
-                                className="flex h-9 px-3 items-center justify-center rounded-full border border-border bg-card text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                className="flex h-9 items-center justify-center rounded-full border border-border bg-card px-3 text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
                                 aria-label="Toggle Language"
                             >
                                 {locale === 'ar' ? 'EN' : 'عربي'}
@@ -214,7 +232,7 @@ export default function Welcome() {
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
+                                    className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
                                 >
                                     {t('nav.dashboard')}
                                 </Link>
@@ -228,7 +246,7 @@ export default function Welcome() {
                                     </Link>
                                     <Link
                                         href={register()}
-                                        className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
+                                        className="inline-flex h-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(109,40,217,0.2)] transition-all hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(109,40,217,0.3)] active:scale-[0.98]"
                                     >
                                         {t('auth.register')}
                                     </Link>
@@ -241,11 +259,12 @@ export default function Welcome() {
                             {/* Language Switcher for mobile */}
                             <button
                                 onClick={() => {
-                                    const nextLocale = locale === 'ar' ? 'en' : 'ar';
+                                    const nextLocale =
+                                        locale === 'ar' ? 'en' : 'ar';
                                     document.cookie = `locale=${nextLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
                                     window.location.reload();
                                 }}
-                                className="flex h-9 px-3 items-center justify-center rounded-full border border-border bg-card text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
+                                className="flex h-9 items-center justify-center rounded-full border border-border bg-card px-3 text-xs font-bold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:scale-95"
                                 aria-label="Toggle Language"
                             >
                                 {locale === 'ar' ? 'EN' : 'عربي'}
@@ -272,9 +291,15 @@ export default function Welcome() {
 
                             {/* Hamburger button */}
                             <button
-                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                className="grid size-9 place-items-center rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
-                                aria-label={mobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                                onClick={() =>
+                                    setMobileMenuOpen(!mobileMenuOpen)
+                                }
+                                className="grid size-9 place-items-center rounded-full bg-primary/5 text-primary transition-colors hover:bg-primary/10"
+                                aria-label={
+                                    mobileMenuOpen
+                                        ? 'إغلاق القائمة'
+                                        : 'فتح القائمة'
+                                }
                             >
                                 {mobileMenuOpen ? (
                                     <X className="size-4.5" />
@@ -287,14 +312,41 @@ export default function Welcome() {
 
                     {/* Mobile menu panel */}
                     {mobileMenuOpen && (
-                        <div className="mt-2 rounded-3xl border border-border/40 bg-background/95 p-4 shadow-[0_18px_45px_rgba(76,29,149,0.08)] backdrop-blur-xl transition-all duration-300 dark:bg-card/95 lg:hidden">
+                        <div className="mt-2 rounded-3xl border border-border/40 bg-background/95 p-4 shadow-[0_18px_45px_rgba(76,29,149,0.08)] backdrop-blur-xl transition-all duration-300 lg:hidden dark:bg-card/95">
                             <nav className="flex flex-col gap-1.5">
                                 {[
-                                    { label: t('welcome.nav.features', 'Features'), href: '#features' },
-                                    { label: t('welcome.nav.demo', 'Live Demo'), href: '#demo' },
-                                    { label: t('welcome.nav.how', 'How it Works'), href: '#how' },
-                                    { label: t('welcome.nav.pricing', 'Pricing'), href: '#pricing' },
-                                    { label: t('welcome.nav.faq', 'FAQ'), href: '#faq' },
+                                    {
+                                        label: t(
+                                            'welcome.nav.features',
+                                            'Features',
+                                        ),
+                                        href: '#features',
+                                    },
+                                    {
+                                        label: t(
+                                            'welcome.nav.demo',
+                                            'Live Demo',
+                                        ),
+                                        href: '#demo',
+                                    },
+                                    {
+                                        label: t(
+                                            'welcome.nav.how',
+                                            'How it Works',
+                                        ),
+                                        href: '#how',
+                                    },
+                                    {
+                                        label: t(
+                                            'welcome.nav.pricing',
+                                            'Pricing',
+                                        ),
+                                        href: '#pricing',
+                                    },
+                                    {
+                                        label: t('welcome.nav.faq', 'FAQ'),
+                                        href: '#faq',
+                                    },
                                 ].map((link) => (
                                     <a
                                         key={link.href}
@@ -312,7 +364,7 @@ export default function Welcome() {
                                     <Link
                                         href={dashboard()}
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-md text-center"
+                                        className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-center text-sm font-bold text-white shadow-md"
                                     >
                                         {t('nav.dashboard')}
                                     </Link>
@@ -320,15 +372,19 @@ export default function Welcome() {
                                     <div className="flex flex-col gap-2">
                                         <Link
                                             href={login()}
-                                            onClick={() => setMobileMenuOpen(false)}
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
                                             className="inline-flex h-10 w-full items-center justify-center rounded-full px-4 text-sm font-semibold text-muted-foreground transition hover:bg-primary/5 hover:text-primary dark:hover:bg-primary/10"
                                         >
                                             {t('auth.login')}
                                         </Link>
                                         <Link
                                             href={register()}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-sm font-bold text-white shadow-md text-center"
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
+                                            className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#5B21B6,#7C3AED,#A78BFA)] px-5 text-center text-sm font-bold text-white shadow-md"
                                         >
                                             {t('auth.register')}
                                         </Link>
@@ -458,7 +514,7 @@ export default function Welcome() {
 
                             {/* Main Logo Container */}
                             <div className="relative z-10 flex min-h-[340px] items-center justify-center sm:min-h-[440px]">
-                                <div className="animate-float rounded-[2rem] border border-white/20 bg-white/80 p-3 shadow-2xl shadow-primary/20 backdrop-blur-sm dark:border-white/10 dark:bg-white/10 sm:rounded-[2.5rem] sm:p-4">
+                                <div className="animate-float rounded-[2rem] border border-white/20 bg-white/80 p-3 shadow-2xl shadow-primary/20 backdrop-blur-sm sm:rounded-[2.5rem] sm:p-4 dark:border-white/10 dark:bg-white/10">
                                     <img
                                         src="/image.png"
                                         alt={t('app.name')}
@@ -475,10 +531,14 @@ export default function Welcome() {
                                     </span>
                                     <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            {t('welcome.hero.widget.autoreply.title')}
+                                            {t(
+                                                'welcome.hero.widget.autoreply.title',
+                                            )}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            {t('welcome.hero.widget.autoreply.desc')}
+                                            {t(
+                                                'welcome.hero.widget.autoreply.desc',
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -509,10 +569,14 @@ export default function Welcome() {
                                     </span>
                                     <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            {t('welcome.hero.widget.engagement.title')}
+                                            {t(
+                                                'welcome.hero.widget.engagement.title',
+                                            )}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            {t('welcome.hero.widget.engagement.desc')}
+                                            {t(
+                                                'welcome.hero.widget.engagement.desc',
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -526,10 +590,14 @@ export default function Welcome() {
                                     </span>
                                     <div className="text-start">
                                         <div className="text-[9px] font-bold text-muted-foreground">
-                                            {t('welcome.hero.widget.security.title')}
+                                            {t(
+                                                'welcome.hero.widget.security.title',
+                                            )}
                                         </div>
                                         <div className="text-xs font-extrabold text-foreground">
-                                            {t('welcome.hero.widget.security.desc')}
+                                            {t(
+                                                'welcome.hero.widget.security.desc',
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1212,7 +1280,7 @@ export default function Welcome() {
                         </div>
 
                         {/* Right Side: Links */}
-                        <div className="flex flex-wrap gap-4 sm:gap-6 font-semibold">
+                        <div className="flex flex-wrap gap-4 font-semibold sm:gap-6">
                             <a
                                 href="/terms"
                                 className="transition-colors hover:text-foreground"
