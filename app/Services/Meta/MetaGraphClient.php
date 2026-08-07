@@ -318,6 +318,7 @@ class MetaGraphClient
                 metaType: (string) ($err['type'] ?? ''),
                 fbtraceId: (string) ($err['fbtrace_id'] ?? ''),
                 httpStatus: $response->status(),
+                metaSubcode: isset($err['error_subcode']) ? (int) $err['error_subcode'] : null,
             );
         }
 

@@ -127,9 +127,11 @@ class SendReply implements ShouldQueue
                 'source_object_id' => $this->sourceObjectId,
                 ...($e instanceof MetaApiException ? [
                     'meta_code' => $e->metaCode,
+                    'meta_subcode' => $e->metaSubcode,
                     'meta_type' => $e->metaType,
                     'fbtrace_id' => $e->fbtraceId,
                     'http_status' => $e->getCode(),
+                    'is_auth_error' => $e->isAuthError(),
                 ] : []),
             ]);
 

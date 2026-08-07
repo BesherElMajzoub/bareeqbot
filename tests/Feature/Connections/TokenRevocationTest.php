@@ -56,6 +56,66 @@ test('marking an already-errored connection does not notify twice', function () 
     Notification::assertNothingSent();
 });
 
+test('an OAuthException that is not a token error leaves the connection active', function () {
+    // Meta stamps `type: OAuthException` on Send API parameter errors (code 100).
+    // These must NOT disable the channel — regression guard for a false-positive
+    // kill switch that took a live connection offline after one failed reply.
+    Notification::fake();
+    Http::fake(['graph.facebook.com/*' => Http::response([
+        'error' => [
+            'message' => 'Invalid parameter',
+            'type' => 'OAuthException',
+            'code' => 100,
+            'error_subcode' => 2018001,
+        ],
+    ], 400)]);
+
+    $owner = User::factory()->create();
+    $tenant = Tenant::factory()->create(['owner_user_id' => $owner->id]);
+    $connection = ChannelConnection::factory()->facebook()->create(['tenant_id' => $tenant->id]);
+    $rule = AutomationRule::factory()->create(['tenant_id' => $tenant->id, 'channel_connection_id' => $connection->id]);
+
+    SendReply::dispatchSync(
+        channelConnectionId: $connection->id,
+        ruleId: $rule->id,
+        platform: ChannelPlatform::Facebook,
+        surface: WebhookSurface::PostComment,
+        sourceObjectId: 'c3',
+        actorId: '999',
+        actionType: RuleActionType::PrivateReply,
+        messageTemplate: 'hi',
+        context: [],
+    );
+
+    expect($connection->fresh()->status)->toBe(ChannelStatus::Active);
+    expect(ReplyLog::withoutTenantScope()->firstWhere('source_object_id', 'c3')->status)->toBe(ReplyLogStatus::Failed);
+    Notification::assertNothingSent();
+});
+
+test('a permission error (code 200) leaves the connection active', function () {
+    Notification::fake();
+    Http::fake(['graph.facebook.com/*' => Http::response([
+        'error' => ['message' => 'Permissions error', 'type' => 'OAuthException', 'code' => 200],
+    ], 403)]);
+
+    $connection = ChannelConnection::factory()->facebook()->create();
+    $rule = AutomationRule::factory()->create(['tenant_id' => $connection->tenant_id, 'channel_connection_id' => $connection->id]);
+
+    SendReply::dispatchSync(
+        channelConnectionId: $connection->id,
+        ruleId: $rule->id,
+        platform: ChannelPlatform::Facebook,
+        surface: WebhookSurface::PostComment,
+        sourceObjectId: 'c4',
+        actorId: '999',
+        actionType: RuleActionType::PublicReply,
+        messageTemplate: 'hi',
+        context: [],
+    );
+
+    expect($connection->fresh()->status)->toBe(ChannelStatus::Active);
+});
+
 test('a transient (non-auth) Meta error does not revoke the connection and is rethrown for retry', function () {
     Http::fake(['graph.facebook.com/*' => Http::response([
         'error' => ['message' => 'Service unavailable', 'type' => 'ServerError', 'code' => 2],
