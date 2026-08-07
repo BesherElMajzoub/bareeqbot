@@ -244,7 +244,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             placeholder="أهلاً بك {{commenter_name}}، تفضل التفاصيل في الرسائل الخاصة..."
                                         />
                                         <span className="text-xs text-muted-foreground">
-                                            سيتم نشر هذا النص كتعليق عام تحت تعليق العميل. (اقرأ {{commenter_name}} للتعويض بالتسمية).
+                                            سيتم نشر هذا النص كتعليق عام تحت تعليق العميل. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
                                         </span>
                                     </label>
 
@@ -287,7 +287,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             placeholder="مرحباً {{commenter_name}}، تفاصيل الأسعار والعروض هي..."
                                         />
                                         <span className="text-xs text-muted-foreground">
-                                            سيتم إرسال هذا النص كرسالة خاصة للعميل في المسنجر. (اتركه فارغاً إذا كنت تريد رداً عاماً فقط).
+                                            سيتم إرسال هذا النص كرسالة خاصة للعميل في المسنجر. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
                                         </span>
                                     </label>
                                 </div>
