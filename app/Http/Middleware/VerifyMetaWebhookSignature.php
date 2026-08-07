@@ -18,11 +18,28 @@ class VerifyMetaWebhookSignature
         $secret = (string) config('services.meta.app_secret');
         $header = (string) $request->header('X-Hub-Signature-256', '');
 
-        abort_if($secret === '' || ! str_starts_with($header, 'sha256='), 403, 'Invalid webhook signature.');
+        if ($secret === '') {
+            \Illuminate\Support\Facades\Log::error('Meta Webhook Failed: META_APP_SECRET is empty in configuration/env.');
+            abort(403, 'Invalid webhook signature: app secret is empty.');
+        }
+
+        if (! str_starts_with($header, 'sha256=')) {
+            \Illuminate\Support\Facades\Log::warning('Meta Webhook Failed: Missing or invalid X-Hub-Signature-256 header.', [
+                'header' => $header,
+                'ip' => $request->ip(),
+            ]);
+            abort(403, 'Invalid webhook signature: missing header.');
+        }
 
         $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $secret);
 
-        abort_unless(hash_equals($expected, $header), 403, 'Invalid webhook signature.');
+        if (! hash_equals($expected, $header)) {
+            \Illuminate\Support\Facades\Log::warning('Meta Webhook Failed: Signature mismatch.', [
+                'received_header' => $header,
+                'expected' => $expected,
+            ]);
+            abort(403, 'Invalid webhook signature.');
+        }
 
         return $next($request);
     }

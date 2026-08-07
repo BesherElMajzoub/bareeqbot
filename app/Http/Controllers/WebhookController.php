@@ -34,9 +34,15 @@ class WebhookController extends Controller
         $configToken = config('services.meta.webhook_verify_token');
 
         if ($mode === 'subscribe' && hash_equals((string) $configToken, (string) $verifyToken)) {
+            \Illuminate\Support\Facades\Log::info('Meta Webhook GET Verification Succeeded.');
             return response((string) $challenge, 200)
                 ->header('Content-Type', 'text/plain');
         }
+
+        \Illuminate\Support\Facades\Log::warning('Meta Webhook GET Verification Failed: Token mismatch or invalid mode.', [
+            'mode' => $mode,
+            'received_token' => $verifyToken,
+        ]);
 
         abort(403, 'Webhook verification failed.');
     }
@@ -51,6 +57,11 @@ class WebhookController extends Controller
     {
         /** @var array<string, mixed> $payload */
         $payload = $request->json()->all();
+
+        \Illuminate\Support\Facades\Log::info('Meta Webhook POST Received Payload.', [
+            'object' => Arr::get($payload, 'object'),
+            'entry_count' => count(Arr::get($payload, 'entry', [])),
+        ]);
 
         $event = WebhookEvent::create([
             'platform' => (string) Arr::get($payload, 'object', 'unknown'),
