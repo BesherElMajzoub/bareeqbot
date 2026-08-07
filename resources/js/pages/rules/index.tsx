@@ -1,5 +1,6 @@
 import { Head, router, useForm, useHttp } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -229,6 +230,12 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+        form.clearErrors();
+
+        if (form.data.match_type !== 'any' && !form.data.keyword?.trim()) {
+            form.setError('keyword', 'الكلمة المفتاحية مطلوبة لهذا النوع من المطابقة.');
+            return;
+        }
 
         const actions =
             surface === 'message'
@@ -262,7 +269,14 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                           : []),
                   ];
 
+        if (actions.length === 0) {
+            form.setError('actions', 'يرجى كتابة نص الرد العام أو الرسالة الخاصة على الأقل لإضافة القاعدة.');
+            return;
+        }
+
+        form.setData('actions', actions);
         form.transform((data) => ({ ...data, actions }));
+
         if (editingRuleId) {
             form.put(rules.update(editingRuleId).url, {
                 onSuccess: () => {
@@ -343,6 +357,17 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                 onSubmit={submit}
                                 className="grid gap-4 md:grid-cols-2"
                             >
+                                {Object.keys(form.errors).length > 0 && (
+                                    <div className="md:col-span-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs font-bold text-destructive">
+                                        ⚠️ تعذر حفظ القاعدة. يرجى مراجعة وتعديل الحقول التالية:
+                                        <ul className="list-disc ms-4 mt-1 font-normal">
+                                            {Object.entries(form.errors).map(([key, err]) => (
+                                                <li key={key}>{err}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
                                 <label className="flex flex-col gap-1 text-sm md:col-span-2">
                                     {t('rules.trigger_surface')}
                                     <select
@@ -386,6 +411,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             </option>
                                         ))}
                                     </select>
+                                    <InputError message={form.errors.channel_connection_id} />
                                 </label>
 
                                 <label className="flex flex-col gap-1 text-sm">
@@ -397,6 +423,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                         }
                                         required
                                     />
+                                    <InputError message={form.errors.name} />
                                 </label>
 
                                 {surface === 'post_comment' && (
@@ -461,6 +488,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                     </option>
                                                 ))}
                                             </select>
+                                            <InputError message={form.errors.target_ref} />
                                             <span className="text-xs text-muted-foreground">
                                                 {!postsLoading &&
                                                 posts.length === 0
@@ -507,6 +535,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                 )
                                             }
                                         />
+                                        <InputError message={form.errors.keyword} />
                                     </label>
                                 )}
 
@@ -532,6 +561,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
 
                                 {surface === 'post_comment' ? (
                                     <div className="grid gap-4 md:col-span-2">
+                                        <InputError message={form.errors.actions} />
                                         <label className="flex flex-col gap-2 text-sm">
                                             <span className="font-medium text-foreground">
                                                 💬 {t('action.public_reply')} (رد عام على التعليق)
