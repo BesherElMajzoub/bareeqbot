@@ -211,13 +211,13 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                         <textarea
                                             className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                             value={
-                                                form.data.actions.find(
+                                                (form.data.actions || []).find(
                                                     (a) => a.action_type === 'public_reply',
                                                 )?.message_template ?? ''
                                             }
                                             onChange={(e) => {
                                                 const text = e.target.value;
-                                                const existingPrivate = form.data.actions.find(
+                                                const existingPrivate = (form.data.actions || []).find(
                                                     (a) => a.action_type === 'private_reply',
                                                 );
                                                 const newActions = [];
@@ -228,7 +228,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                         delay_seconds: 0,
                                                     });
                                                 }
-                                                if (existingPrivate && existingPrivate.message_template.trim()) {
+                                                if (existingPrivate && existingPrivate.message_template?.trim()) {
                                                     newActions.push(existingPrivate);
                                                 }
                                                 // Fallback if both empty
@@ -255,17 +255,17 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                         <textarea
                                             className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                             value={
-                                                form.data.actions.find(
+                                                (form.data.actions || []).find(
                                                     (a) => a.action_type === 'private_reply',
                                                 )?.message_template ?? ''
                                             }
                                             onChange={(e) => {
                                                 const text = e.target.value;
-                                                const existingPublic = form.data.actions.find(
+                                                const existingPublic = (form.data.actions || []).find(
                                                     (a) => a.action_type === 'public_reply',
                                                 );
                                                 const newActions = [];
-                                                if (existingPublic && existingPublic.message_template.trim()) {
+                                                if (existingPublic && existingPublic.message_template?.trim()) {
                                                     newActions.push(existingPublic);
                                                 }
                                                 if (text.trim()) {
