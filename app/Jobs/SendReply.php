@@ -128,11 +128,12 @@ class SendReply implements ShouldQueue
 
             $log?->update(['status' => ReplyLogStatus::Failed, 'error' => mb_substr($e->getMessage(), 0, 500)]);
 
-            // An expired/revoked token will fail on every retry — mark the
-            // connection errored and notify the owner instead of retrying futilely.
-            if ($e instanceof MetaApiException && $e->isAuthError()) {
-                $markConnectionError->handle($connection, $e->getMessage());
+            if ($e instanceof MetaApiException) {
+                if ($e->isAuthError()) {
+                    $markConnectionError->handle($connection, $e->getMessage());
+                }
 
+                // Non-transient Meta API errors (e.g., duplicate private reply #10900, permission #200) should fail cleanly without queue retries.
                 return;
             }
 
