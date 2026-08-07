@@ -185,9 +185,12 @@ class MetaGraphClient
      */
     public function privateReplyToComment(string $assetId, string $commentId, string $message, string $token): array
     {
+        // Meta Send API recipient.comment_id requires pure comment_id without POSTID_ prefix
+        $cleanCommentId = str_contains($commentId, '_') ? (string) last(explode('_', $commentId)) : $commentId;
+
         return $this->parseResponse(
             $this->requestWithToken($token)->post("/{$assetId}/messages", [
-                'recipient' => ['comment_id' => $commentId],
+                'recipient' => ['comment_id' => $cleanCommentId],
                 'message' => ['text' => $message],
             ]),
         );
