@@ -367,6 +367,89 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     </label>
                                 </div>
 
+                                {/* Live Preview Widget (المعاينة الحية للرد قبل الحفظ) */}
+                                {((form.data.actions || []).some((a) => (a.message_template || '').trim().length > 0)) && (
+                                    <div className="md:col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-inner space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+                                                    👁️
+                                                </span>
+                                                <h4 className="text-sm font-bold text-foreground">
+                                                    المعاينة الحية للرد (Live Preview)
+                                                </h4>
+                                            </div>
+                                            <span className="text-[11px] text-muted-foreground bg-background px-2.5 py-1 rounded-full border border-border/50">
+                                                اسم المعلق التجريبي: <strong className="text-primary">أحمد العلي</strong>
+                                            </span>
+                                        </div>
+
+                                        <div className="grid gap-4 md:grid-cols-2">
+                                            {/* Public Comment Preview */}
+                                            {((form.data.actions || []).find((a) => a.action_type === 'public_reply')?.message_template?.trim()) && (
+                                                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-xs space-y-2">
+                                                    <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/40">
+                                                        <span className="font-semibold text-blue-600 flex items-center gap-1.5">
+                                                            💬 معاينة الرد العام على الفيسبوك
+                                                        </span>
+                                                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                    </div>
+
+                                                    <div className="space-y-2 pt-1">
+                                                        {/* Simulated Customer Comment */}
+                                                        <div className="flex items-start gap-2 text-xs">
+                                                            <div className="size-7 rounded-full bg-muted flex items-center justify-center font-bold text-[10px] shrink-0">
+                                                                أحمد
+                                                            </div>
+                                                            <div className="bg-muted/40 rounded-xl p-2 max-w-[90%] text-foreground">
+                                                                <span className="font-bold block text-[11px] text-muted-foreground">أحمد العلي</span>
+                                                                {form.data.keyword ? form.data.keyword : 'السلام عليكم، كم السعر والتفاصيل؟'}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Simulated Bot Reply */}
+                                                        <div className="flex items-start gap-2 text-xs ps-4 border-s-2 border-primary/30">
+                                                            <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+                                                                🤖
+                                                            </div>
+                                                            <div className="bg-primary/5 border border-primary/15 rounded-xl p-2 max-w-[90%] text-foreground">
+                                                                <span className="font-bold block text-[11px] text-primary">صفحتك الرسمية</span>
+                                                                {((form.data.actions || []).find((a) => a.action_type === 'public_reply')?.message_template ?? '').replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Private Messenger DM Preview */}
+                                            {((form.data.actions || []).find((a) => a.action_type === 'private_reply')?.message_template?.trim()) && (
+                                                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-xs space-y-2">
+                                                    <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/40">
+                                                        <span className="font-semibold text-purple-600 flex items-center gap-1.5">
+                                                            ✉️ معاينة الرسالة الخاصة (Messenger DM)
+                                                        </span>
+                                                        <span className="size-2 rounded-full bg-purple-500 animate-pulse" />
+                                                    </div>
+
+                                                    <div className="pt-1">
+                                                        <div className="flex items-start gap-2 text-xs">
+                                                            <div className="size-7 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                                                ✉️
+                                                            </div>
+                                                            <div className="bg-card border border-purple-500/20 rounded-2xl rounded-ss-none p-2.5 max-w-[90%] shadow-xs text-foreground space-y-1">
+                                                                <span className="font-bold block text-[10px] text-purple-600">رسالة خاصة من صفحتك إلى أحمد العلي</span>
+                                                                <p className="whitespace-pre-wrap leading-relaxed">
+                                                                    {((form.data.actions || []).find((a) => a.action_type === 'private_reply')?.message_template ?? '').replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="md:col-span-2">
                                     <Button
                                         type="submit"
