@@ -203,58 +203,94 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     </label>
                                 )}
 
-                                <label className="flex flex-col gap-1 text-sm">
-                                    {t('rules.actions')}
-                                    <select
-                                        className={selectClass}
-                                        value={form.data.actions[0].action_type}
-                                        onChange={(e) =>
-                                            setAction({
-                                                action_type: e.target.value,
-                                            })
-                                        }
-                                    >
-                                        <option value="public_reply">
-                                            {t('action.public_reply')}
-                                        </option>
-                                        <option value="private_reply">
-                                            {t('action.private_reply')}
-                                        </option>
-                                    </select>
-                                </label>
+                                 <div className="grid gap-4 md:col-span-2">
+                                    <label className="flex flex-col gap-1 text-sm">
+                                        <span className="font-medium text-foreground">
+                                            💬 {t('action.public_reply')} (رد عام على التعليق)
+                                        </span>
+                                        <textarea
+                                            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                            value={
+                                                form.data.actions.find(
+                                                    (a) => a.action_type === 'public_reply',
+                                                )?.message_template ?? ''
+                                            }
+                                            onChange={(e) => {
+                                                const text = e.target.value;
+                                                const existingPrivate = form.data.actions.find(
+                                                    (a) => a.action_type === 'private_reply',
+                                                );
+                                                const newActions = [];
+                                                if (text.trim()) {
+                                                    newActions.push({
+                                                        action_type: 'public_reply',
+                                                        message_template: text,
+                                                        delay_seconds: 0,
+                                                    });
+                                                }
+                                                if (existingPrivate && existingPrivate.message_template.trim()) {
+                                                    newActions.push(existingPrivate);
+                                                }
+                                                // Fallback if both empty
+                                                if (newActions.length === 0) {
+                                                    newActions.push({
+                                                        action_type: 'public_reply',
+                                                        message_template: text,
+                                                        delay_seconds: 0,
+                                                    });
+                                                }
+                                                form.setData('actions', newActions);
+                                            }}
+                                            placeholder="أهلاً بك {{commenter_name}}، تفضل التفاصيل في الرسائل الخاصة..."
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                            سيتم نشر هذا النص كتعليق عام تحت تعليق العميل. (اقرأ {{commenter_name}} للتعويض بالتسمية).
+                                        </span>
+                                    </label>
 
-                                <label className="flex flex-col gap-1 text-sm">
-                                    {t('rules.priority')}
-                                    <Input
-                                        type="number"
-                                        value={form.data.priority}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'priority',
-                                                Number(e.target.value),
-                                            )
-                                        }
-                                    />
-                                </label>
-
-                                <label className="flex flex-col gap-1 text-sm md:col-span-2">
-                                    {t('action.public_reply')}
-                                    <textarea
-                                        className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:ring-2 focus:ring-ring focus:outline-none"
-                                        value={
-                                            form.data.actions[0]
-                                                .message_template
-                                        }
-                                        onChange={(e) =>
-                                            setAction({
-                                                message_template:
-                                                    e.target.value,
-                                            })
-                                        }
-                                        placeholder="{{commenter_name}}"
-                                        required
-                                    />
-                                </label>
+                                    <label className="flex flex-col gap-1 text-sm">
+                                        <span className="font-medium text-foreground">
+                                            ✉️ {t('action.private_reply')} (رسالة خاصة على المسنجر)
+                                        </span>
+                                        <textarea
+                                            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                            value={
+                                                form.data.actions.find(
+                                                    (a) => a.action_type === 'private_reply',
+                                                )?.message_template ?? ''
+                                            }
+                                            onChange={(e) => {
+                                                const text = e.target.value;
+                                                const existingPublic = form.data.actions.find(
+                                                    (a) => a.action_type === 'public_reply',
+                                                );
+                                                const newActions = [];
+                                                if (existingPublic && existingPublic.message_template.trim()) {
+                                                    newActions.push(existingPublic);
+                                                }
+                                                if (text.trim()) {
+                                                    newActions.push({
+                                                        action_type: 'private_reply',
+                                                        message_template: text,
+                                                        delay_seconds: 0,
+                                                    });
+                                                }
+                                                if (newActions.length === 0) {
+                                                    newActions.push({
+                                                        action_type: 'public_reply',
+                                                        message_template: '',
+                                                        delay_seconds: 0,
+                                                    });
+                                                }
+                                                form.setData('actions', newActions);
+                                            }}
+                                            placeholder="مرحباً {{commenter_name}}، تفاصيل الأسعار والعروض هي..."
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                            سيتم إرسال هذا النص كرسالة خاصة للعميل في المسنجر. (اتركه فارغاً إذا كنت تريد رداً عاماً فقط).
+                                        </span>
+                                    </label>
+                                </div>
 
                                 <div className="md:col-span-2">
                                     <Button
