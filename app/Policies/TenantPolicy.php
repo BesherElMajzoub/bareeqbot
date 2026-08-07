@@ -17,7 +17,17 @@ class TenantPolicy
         return $user->hasPermissionTo('view-tenants');
     }
 
+    public function create(User $user): bool
+    {
+        return $user->hasPermissionTo('manage-tenants');
+    }
+
     public function update(User $user, Tenant $tenant): bool
+    {
+        return $user->hasPermissionTo('manage-tenants');
+    }
+
+    public function delete(User $user, Tenant $tenant): bool
     {
         return $user->hasPermissionTo('manage-tenants');
     }
