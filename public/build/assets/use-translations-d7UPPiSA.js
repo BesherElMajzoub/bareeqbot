@@ -1,0 +1,1 @@
+import{f as e,i as t}from"./wayfinder-CZngCWbQ.js";var n=t();function r(){let t=(0,n.c)(6),{translations:r,locale:i,direction:a}=e().props,o;t[0]===r?o=t[1]:(o=(e,t)=>r[e]??t??e,t[0]=r,t[1]=o);let s=o,c;return t[2]!==a||t[3]!==i||t[4]!==s?(c={t:s,locale:i,direction:a},t[2]=a,t[3]=i,t[4]=s,t[5]=c):c=t[5],c}export{r as t};

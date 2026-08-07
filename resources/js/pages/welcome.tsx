@@ -36,6 +36,9 @@ export default function Welcome() {
     );
     const [submittedComment, setSubmittedComment] = useState('');
 
+    // State for Platform Scope (facebook vs facebook_instagram)
+    const [platformScope, setPlatformScope] = useState<'facebook' | 'facebook_instagram'>('facebook');
+
     // State for FAQs (index of open question, null if none)
     const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -69,44 +72,49 @@ export default function Welcome() {
     // Plans data matching PlanSeeder.php pricing and logic
     const plans = [
         {
-            name: 'Starter',
-            slug: 'starter',
+            name: 'الرد الأساسي',
+            slug: 'basic',
             maxPages: 1,
-            baseMonthly: 300000,
-            featuresKey: 'welcome.pricing.starter_features',
+            featuresText: 'مناسب للمتاجر الفردية والأنشطة الناشئة لربط صفحة واحدة والتفاعل السريع.',
             color: 'from-blue-500/20 to-indigo-500/20',
             borderColor: 'hover:border-blue-500/50',
             badge: null,
+            prices: {
+                1: { facebook: 30000, facebook_instagram: 55000 },
+                3: { facebook: 85000, facebook_instagram: 150000 },
+                6: { facebook: 160000, facebook_instagram: 290000 },
+                12: { facebook: 300000, facebook_instagram: 550000 },
+            },
         },
         {
-            name: 'Growth',
-            slug: 'growth',
+            name: 'الرد المتقدم',
+            slug: 'advanced',
             maxPages: 5,
-            baseMonthly: 400000,
-            featuresKey: 'welcome.pricing.growth_features',
+            featuresText: 'مثالي للنشاطات المتنامية التي تمتلك عدة صفحات وتتطلب ردوداً تلقائية متقدمة.',
             color: 'from-purple-500/20 to-pink-500/20',
-            borderColor: 'hover:border-purple-500/50',
-            badge: 'الشائع',
+            borderColor: 'border-purple-500/50 shadow-purple-500/10 shadow-lg',
+            badge: 'الأكثر شعبية',
+            prices: {
+                1: { facebook: 40000, facebook_instagram: 75000 },
+                3: { facebook: 110000, facebook_instagram: 210000 },
+                6: { facebook: 200000, facebook_instagram: 400000 },
+                12: { facebook: 380000, facebook_instagram: 750000 },
+            },
         },
         {
-            name: 'Business',
-            slug: 'business',
+            name: 'الرد المفتوح',
+            slug: 'open',
             maxPages: 15,
-            baseMonthly: 500000,
-            featuresKey: 'welcome.pricing.business_features',
+            featuresText: 'حل متكامل للشركات والمؤسسات مع إمكانيات ربط حتى 15 صفحة وردود فورية مفتوحة.',
             color: 'from-primary/20 to-accent/20',
             borderColor: 'border-primary/50 shadow-primary/10 shadow-lg',
             badge: 'الأفضل قيمة',
-        },
-        {
-            name: 'Agency',
-            slug: 'agency',
-            maxPages: 50,
-            baseMonthly: 900000,
-            featuresKey: 'welcome.pricing.agency_features',
-            color: 'from-amber-500/20 to-orange-500/20',
-            borderColor: 'hover:border-amber-500/50',
-            badge: 'للشركات',
+            prices: {
+                1: { facebook: 50000, facebook_instagram: 90000 },
+                3: { facebook: 135000, facebook_instagram: 260000 },
+                6: { facebook: 260000, facebook_instagram: 500000 },
+                12: { facebook: 500000, facebook_instagram: 950000 },
+            },
         },
     ];
 
@@ -1017,51 +1025,73 @@ export default function Welcome() {
                             </p>
                         </div>
 
-                        {/* Billing Cycle Switch Tabs */}
-                        <div className="mb-16 flex items-center gap-1.5 rounded-2xl border border-border/80 bg-card/60 p-1 backdrop-blur-md">
-                            {[
-                                { val: 1, label: 'شهرياً' },
-                                { val: 3, label: '3 أشهر', disc: '5%' },
-                                { val: 6, label: '6 أشهر', disc: '10%' },
-                                { val: 12, label: '12 شهراً', disc: '20%' },
-                            ].map((tab) => (
+                        {/* Toggles Container: Platform Scope + Billing Cycle */}
+                        <div className="mb-14 flex flex-col items-center gap-6">
+                            {/* Platform Scope Toggle (Facebook vs Facebook + Instagram) */}
+                            <div className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card p-1.5 shadow-sm">
                                 <button
-                                    key={tab.val}
-                                    onClick={() =>
-                                        setBillingCycle(
-                                            tab.val as 1 | 3 | 6 | 12,
-                                        )
-                                    }
-                                    className={`relative rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 active:scale-95 sm:text-sm ${
-                                        billingCycle === tab.val
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                    onClick={() => setPlatformScope('facebook')}
+                                    aria-label="فيسبوك فقط"
+                                    className={`flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all sm:text-sm ${
+                                        platformScope === 'facebook'
+                                            ? 'bg-blue-600 text-white shadow-md'
                                             : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                                     }`}
                                 >
-                                    <span>{tab.label}</span>
-                                    {tab.disc && (
-                                        <span
-                                            className={`ms-1.5 rounded px-1 py-0.5 text-[8px] font-black sm:text-[9px] ${
-                                                billingCycle === tab.val
-                                                    ? 'bg-white/20 text-white'
-                                                    : 'bg-primary/10 text-primary'
-                                            }`}
-                                        >
-                                            -{tab.disc}
-                                        </span>
-                                    )}
+                                    <Facebook className="size-4" />
+                                    <span>فيسبوك</span>
                                 </button>
-                            ))}
+                                <button
+                                    onClick={() => setPlatformScope('facebook_instagram')}
+                                    aria-label="فيسبوك + انستغرام"
+                                    className={`flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all sm:text-sm ${
+                                        platformScope === 'facebook_instagram'
+                                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        <Facebook className="size-3.5" />
+                                        <span>+</span>
+                                        <Instagram className="size-3.5" />
+                                    </div>
+                                    <span>فيسبوك + انستغرام</span>
+                                </button>
+                            </div>
+
+                            {/* Billing Cycle Switch Tabs */}
+                            <div className="flex flex-wrap justify-center items-center gap-1.5 rounded-2xl border border-border/80 bg-card/60 p-1 backdrop-blur-md">
+                                {[
+                                    { val: 1, label: 'شهرياً' },
+                                    { val: 3, label: '3 أشهر' },
+                                    { val: 6, label: '6 أشهر' },
+                                    { val: 12, label: 'سنوي (12 شهراً)' },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.val}
+                                        onClick={() =>
+                                            setBillingCycle(
+                                                tab.val as 1 | 3 | 6 | 12,
+                                            )
+                                        }
+                                        className={`relative rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 active:scale-95 sm:text-sm ${
+                                            billingCycle === tab.val
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                                        }`}
+                                    >
+                                        <span>{tab.label}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Pricing Cards Grid */}
-                        <div className="mb-16 grid w-full items-stretch gap-8 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-16 grid w-full max-w-6xl items-stretch gap-8 md:grid-cols-3">
                             {plans.map((plan) => {
-                                const currentPrice = calculatePrice(
-                                    plan.baseMonthly,
-                                    billingCycle,
-                                );
-                                const isBestValue = plan.slug === 'business';
+                                const currentPrice =
+                                    plan.prices[billingCycle]?.[platformScope] ?? 0;
+                                const isBestValue = plan.slug === 'open';
 
                                 return (
                                     <div
@@ -1071,7 +1101,7 @@ export default function Welcome() {
                                         {/* Badge top right/left */}
                                         {plan.badge && (
                                             <span
-                                                className={`absolute -top-3.5 ${isRtl ? 'left-6' : 'right-6'} rounded-full bg-primary px-3 py-1 text-[10px] font-black tracking-wider text-primary-foreground uppercase shadow-xs`}
+                                                className={`absolute -top-3.5 ${isRtl ? 'left-6' : 'right-6'} rounded-full bg-primary px-3.5 py-1 text-[10px] font-black tracking-wider text-primary-foreground uppercase shadow-xs`}
                                             >
                                                 {plan.badge}
                                             </span>
@@ -1079,7 +1109,7 @@ export default function Welcome() {
 
                                         <div>
                                             <div className="mb-4 flex items-center gap-2">
-                                                <h3 className="text-xl font-bold">
+                                                <h3 className="text-2xl font-bold">
                                                     {plan.name}
                                                 </h3>
                                             </div>
@@ -1088,28 +1118,25 @@ export default function Welcome() {
                                                 <span className="text-4xl font-black text-foreground tabular-nums sm:text-5xl">
                                                     {currentPrice.toLocaleString()}
                                                 </span>
-                                                <span className="ms-1 text-xs font-bold text-muted-foreground">
-                                                    {isRtl ? 'ل.س' : 'SYP'}{' '}
+                                                <span className="ms-1.5 text-xs font-bold text-muted-foreground">
+                                                    ل.س{' '}
                                                     {billingCycle > 1
-                                                        ? isRtl
-                                                            ? ` / ${billingCycle} أشهر`
-                                                            : ` / ${billingCycle} months`
-                                                        : isRtl
-                                                          ? ' / شهرياً'
-                                                          : ' / month'}
+                                                        ? ` / ${billingCycle} أشهر`
+                                                        : ' / شهرياً'}
                                                 </span>
                                             </div>
 
                                             <p className="mb-6 text-xs font-bold text-primary">
-                                                {t(
-                                                    'welcome.pricing.channel_limit',
-                                                ).replace(
-                                                    ':count',
-                                                    plan.maxPages.toString(),
-                                                )}
+                                                {plan.maxPages === 1
+                                                    ? 'صفحة واحدة فقط'
+                                                    : `حتى ${plan.maxPages} صفحات`}
                                             </p>
 
                                             <div className="my-6 border-t border-border/40" />
+
+                                            <p className="mb-6 text-start text-xs leading-relaxed text-muted-foreground">
+                                                {plan.featuresText}
+                                            </p>
 
                                             <ul className="mb-8 space-y-3.5">
                                                 <li className="flex items-start gap-2.5 text-start text-sm">
@@ -1117,7 +1144,15 @@ export default function Welcome() {
                                                         <Check className="size-3" />
                                                     </div>
                                                     <span className="text-xs leading-relaxed text-muted-foreground">
-                                                        {t(plan.featuresKey)}
+                                                        ردود عامة غير محدودة على التعليقات والريلز
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-2.5 text-start text-sm">
+                                                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                        <Check className="size-3" />
+                                                    </div>
+                                                    <span className="text-xs leading-relaxed text-muted-foreground">
+                                                        إرسال أسعار وتفاصيل تلقائية بالرسائل الخاصة
                                                     </span>
                                                 </li>
                                                 <li className="flex items-start gap-2.5 text-start text-sm">
@@ -1125,16 +1160,7 @@ export default function Welcome() {
                                                         <Check className="size-3" />
                                                     </div>
                                                     <span className="text-xs text-muted-foreground">
-                                                        ربط مباشر وآمن Meta
-                                                        Business
-                                                    </span>
-                                                </li>
-                                                <li className="flex items-start gap-2.5 text-start text-sm">
-                                                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                                        <Check className="size-3" />
-                                                    </div>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        دعم فني كامل عبر المنصة
+                                                        ربط مباشر وآمن رسمياً مع Meta Graph API
                                                     </span>
                                                 </li>
                                             </ul>
