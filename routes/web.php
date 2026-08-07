@@ -69,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('analytics', AnalyticsController::class)->name('analytics');
 
         Route::get('tenants', [TenantController::class, 'index'])->name('tenants.index');
+        Route::post('tenants', [TenantController::class, 'store'])->name('tenants.store');
         Route::post('tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
         Route::post('tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');
 

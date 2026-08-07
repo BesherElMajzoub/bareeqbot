@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Tenancy\ActivateTenant;
+use App\Actions\Tenancy\CreateTenant;
 use App\Actions\Tenancy\SuspendTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -41,14 +45,36 @@ class TenantController extends Controller
         return back();
     }
 
-    public function activate(Tenant $tenant, ActivateTenant $action): RedirectResponse
+    public function store(Request $request, CreateTenant $action): RedirectResponse
     {
-        $this->authorize('update', $tenant);
+        $this->authorize('create', Tenant::class);
 
-        $action->handle($tenant);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+            'phone' => ['nullable', 'string', 'max:50'],
+        ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('admin.tenant_activated')]);
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'email_verified_at' => now(),
+        ]);
 
-        return back();
+        $tenant = $action->handle($user, $validated['name']);
+
+        $whatsappText = "أهلاً بك {$validated['name']} في منصة بريق للبوت والرد التلقائي! 🎉\n\nبيانات دخول حسابك هي:\nالبريد الإلكتروني: {$validated['email']}\nكلمة المرور: {$validated['password']}\n\nرابط تسجيل الدخول:\nhttps://bareeqplatform.site/login";
+        
+        $phoneDigits = preg_replace('/\D/', '', $validated['phone'] ?? '');
+        $whatsappUrl = 'https://wa.me/' . ($phoneDigits ?: '') . '?text=' . urlencode($whatsappText);
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => __('admin.tenant_created'),
+            'whatsapp_url' => $whatsappUrl,
+            'whatsapp_text' => $whatsappText,
+        ]);
     }
 }
