@@ -11,7 +11,7 @@ use App\Models\ReplyLog;
 use App\Services\Meta\MetaApiException;
 use Illuminate\Support\Facades\Http;
 
-function sendReply(ChannelConnection $connection, int $ruleId, RuleActionType $action = RuleActionType::PublicReply, string $object = 'comment-1'): void
+function sendReply(ChannelConnection $connection, int $ruleId, RuleActionType $action = RuleActionType::PublicReply, string $object = 'comment-1', ?string $imageUrl = null): void
 {
     SendReply::dispatchSync(
         channelConnectionId: $connection->id,
@@ -23,6 +23,7 @@ function sendReply(ChannelConnection $connection, int $ruleId, RuleActionType $a
         actionType: $action,
         messageTemplate: 'Hi {{commenter_name}}',
         context: ['commenter_name' => 'Sara'],
+        imageUrl: $imageUrl,
     );
 }
 
@@ -47,6 +48,31 @@ test('a private reply is sent via the Send API with a comment_id recipient', fun
 
     Http::assertSent(fn ($request) => str_contains($request->url(), "{$connection->provider_account_id}/messages")
         && $request['recipient']['comment_id'] === 'comment-1');
+});
+
+test('a private reply with an image sends a second Send API call with the attachment', function () {
+    Http::fake(['graph.facebook.com/*' => Http::response(['id' => 'm-1'])]);
+    $connection = ChannelConnection::factory()->facebook()->create();
+    $rule = AutomationRule::factory()->create(['tenant_id' => $connection->tenant_id, 'channel_connection_id' => $connection->id]);
+
+    sendReply($connection, $rule->id, RuleActionType::PrivateReply, imageUrl: 'https://example.test/promo.jpg');
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => ($request['message']['attachment']['type'] ?? null) === 'image'
+        && $request['message']['attachment']['payload']['url'] === 'https://example.test/promo.jpg'
+        && $request['recipient']['comment_id'] === 'comment-1');
+});
+
+test('a dm with an image sends a second Send API call with the attachment', function () {
+    Http::fake(['graph.facebook.com/*' => Http::response(['id' => 'm-1'])]);
+    $connection = ChannelConnection::factory()->facebook()->create();
+    $rule = AutomationRule::factory()->create(['tenant_id' => $connection->tenant_id, 'channel_connection_id' => $connection->id]);
+
+    sendReply($connection, $rule->id, RuleActionType::Dm, imageUrl: 'https://example.test/promo.jpg');
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => ($request['message']['attachment']['type'] ?? null) === 'image'
+        && $request['recipient']['id'] === '999');
 });
 
 test('the same object + action is never replied to twice (idempotent)', function () {

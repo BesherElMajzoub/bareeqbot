@@ -31,6 +31,7 @@ class ReplyDispatcher
                 messageTemplate: $action->message_template,
                 context: $context,
                 parentRef: $event->parentId,
+                imageUrl: $action->image_url,
             )->delay(now()->addSeconds($action->delay_seconds));
         }
     }

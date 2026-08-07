@@ -26,7 +26,7 @@ class TenantController extends Controller
             ->allowedFilters(AllowedFilter::exact('status'))
             ->allowedSorts('created_at', 'name')
             ->defaultSort('-created_at')
-            ->with('owner:id,name,email')
+            ->with(['owner:id,name,email', 'subscriptions' => fn ($q) => $q->latest('ends_at')->with('plan:id,name')])
             ->withCount('channelConnections')
             ->paginate(20)
             ->withQueryString();

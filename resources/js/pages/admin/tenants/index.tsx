@@ -1,4 +1,4 @@
-import { useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,13 @@ import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
 import tenants from '@/routes/admin/tenants';
 
+type SubscriptionRow = {
+    id: number;
+    ends_at: string;
+    status: string;
+    plan?: { name: string } | null;
+};
+
 type Row = {
     id: number;
     name: string;
@@ -15,6 +22,7 @@ type Row = {
     status: string;
     channel_connections_count: number;
     owner?: { name: string; email: string } | null;
+    subscriptions?: SubscriptionRow[];
 };
 
 type Props = {
@@ -169,6 +177,7 @@ export default function AdminTenants({ tenants: tenantList }: Props) {
                                     <th className="p-3 text-start">
                                         {t('billing.status')}
                                     </th>
+                                    <th className="p-3 text-start">انتهاء الاشتراك</th>
                                     <th className="p-3 text-end">خيارات والإرسال</th>
                                 </tr>
                             </thead>
@@ -200,6 +209,20 @@ export default function AdminTenants({ tenants: tenantList }: Props) {
                                             >
                                                 {t(`status.${row.status}`)}
                                             </Badge>
+                                        </td>
+                                        <td className="p-3">
+                                            {row.subscriptions && row.subscriptions.length > 0 ? (
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="font-semibold text-xs text-foreground">
+                                                        {new Date(row.subscriptions[0].ends_at).toISOString().split('T')[0]}
+                                                    </span>
+                                                    <span className="text-[11px] text-muted-foreground">
+                                                        {row.subscriptions[0].plan?.name ?? 'اشتراك'}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">لا يوجد اشتراك نشط</span>
+                                            )}
                                         </td>
                                         <td className="p-3 text-end flex justify-end gap-2">
                                             {row.owner?.email && (

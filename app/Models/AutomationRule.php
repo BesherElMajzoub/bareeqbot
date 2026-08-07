@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $keyword
  * @property bool $case_sensitive
  * @property int $priority
+ * @property bool $auto_like_comment
  * @property bool $is_active
  */
 #[Fillable([
@@ -38,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'keyword',
     'case_sensitive',
     'priority',
+    'auto_like_comment',
     'is_active',
 ])]
 class AutomationRule extends Model
@@ -53,6 +55,7 @@ class AutomationRule extends Model
             'match_type' => RuleMatchType::class,
             'case_sensitive' => 'boolean',
             'priority' => 'integer',
+            'auto_like_comment' => 'boolean',
             'is_active' => 'boolean',
         ];
     }

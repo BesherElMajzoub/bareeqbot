@@ -69,6 +69,24 @@ test('parses a story mention messaging event', function () {
         ->and($events->first()->objectId)->toBe('m2');
 });
 
+test('parses a plain messenger text message', function () {
+    $events = $this->parser->parse(messengerTextPayload('111', 'm3', '555', 'what is the price?'));
+
+    expect($events)->toHaveCount(1);
+    $event = $events->first();
+    expect($event->surface)->toBe(WebhookSurface::Message)
+        ->and($event->assetId)->toBe('111')
+        ->and($event->objectId)->toBe('m3')
+        ->and($event->actorId)->toBe('555')
+        ->and($event->text)->toBe('what is the price?');
+});
+
+test('drops an echoed messenger message', function () {
+    $events = $this->parser->parse(messengerTextPayload('111', 'm4', '111', 'the price is great', isEcho: true));
+
+    expect($events)->toHaveCount(0);
+});
+
 test('drops non-comment feed items', function () {
     $payload = [
         'object' => 'page',

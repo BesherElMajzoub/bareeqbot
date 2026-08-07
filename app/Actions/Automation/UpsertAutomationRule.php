@@ -4,11 +4,14 @@ namespace App\Actions\Automation;
 
 use App\Models\AutomationRule;
 use App\Models\Tenant;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Creates or updates an automation rule together with its ordered actions.
- * Actions are fully replaced on update (simplest correct semantics for v1).
+ * Actions are fully replaced on update (simplest correct semantics for v1),
+ * including any uploaded reply images stored on disk.
  */
 class UpsertAutomationRule
 {
@@ -30,17 +33,26 @@ class UpsertAutomationRule
                 'keyword' => $data['keyword'] ?? null,
                 'case_sensitive' => $data['case_sensitive'] ?? false,
                 'priority' => $data['priority'] ?? 0,
+                'auto_like_comment' => $data['auto_like_comment'] ?? false,
                 'is_active' => $data['is_active'] ?? true,
             ]);
             $rule->tenant_id = $tenant->id;
             $rule->save();
 
+            $oldImagePaths = $rule->actions()->whereNotNull('image_path')->pluck('image_path');
+            Storage::disk('public')->delete($oldImagePaths->all());
+
             $rule->actions()->delete();
 
             foreach (array_values($data['actions']) as $index => $action) {
+                $image = $action['image'] ?? null;
+
                 $rule->actions()->create([
                     'action_type' => $action['action_type'],
                     'message_template' => $action['message_template'],
+                    'image_path' => $image instanceof UploadedFile
+                        ? Storage::disk('public')->putFile('rule-actions', $image)
+                        : null,
                     'delay_seconds' => $action['delay_seconds'] ?? 0,
                     'sort' => $index,
                 ]);

@@ -213,36 +213,62 @@ class MetaGraphClient
      * does not exist" even for valid comment ids — Meta routes private
      * replies through Send API instead).
      *
+     * An optional image is sent as a second Send API call — the API only
+     * accepts one of `text`/`attachment` per message object.
+     *
      * @return array<string, mixed>
      */
-    public function privateReplyToComment(string $assetId, string $commentId, string $message, string $token): array
+    public function privateReplyToComment(string $assetId, string $commentId, string $message, string $token, ?string $imageUrl = null): array
     {
         // Meta Send API recipient.comment_id requires pure comment_id without POSTID_ prefix
         $cleanCommentId = str_contains($commentId, '_') ? (string) last(explode('_', $commentId)) : $commentId;
 
-        return $this->parseResponse(
-            $this->requestWithToken($token)->post("/{$assetId}/messages", [
-                'recipient' => ['comment_id' => $cleanCommentId],
-                'message' => ['text' => $message],
-            ]),
-        );
+        return $this->sendMessages($assetId, ['comment_id' => $cleanCommentId], $message, $token, $imageUrl);
     }
 
     /**
-     * Send a direct message (used for story replies / mentions) via the Send API,
-     * from the asset to a user, within Meta's messaging window.
+     * Send a direct message (used for story replies / mentions / plain DMs) via
+     * the Send API, from the asset to a user, within Meta's messaging window.
+     *
+     * An optional image is sent as a second Send API call — the API only
+     * accepts one of `text`/`attachment` per message object.
      *
      * @return array<string, mixed>
      */
-    public function sendDirectMessage(string $assetId, string $recipientId, string $message, string $token): array
+    public function sendDirectMessage(string $assetId, string $recipientId, string $message, string $token, ?string $imageUrl = null): array
     {
-        return $this->parseResponse(
-            $this->requestWithToken($token)->post("/{$assetId}/messages", [
-                'messaging_type' => 'RESPONSE',
-                'recipient' => ['id' => $recipientId],
-                'message' => ['text' => $message],
-            ]),
-        );
+        return $this->sendMessages($assetId, ['id' => $recipientId], $message, $token, $imageUrl);
+    }
+
+    /**
+     * @param  array<string, string>  $recipient
+     * @return array<string, mixed>
+     */
+    private function sendMessages(string $assetId, array $recipient, string $message, string $token, ?string $imageUrl): array
+    {
+        $response = [];
+
+        if ($message !== '') {
+            $response = $this->parseResponse(
+                $this->requestWithToken($token)->post("/{$assetId}/messages", [
+                    'messaging_type' => 'RESPONSE',
+                    'recipient' => $recipient,
+                    'message' => ['text' => $message],
+                ]),
+            );
+        }
+
+        if ($imageUrl !== null) {
+            $response = $this->parseResponse(
+                $this->requestWithToken($token)->post("/{$assetId}/messages", [
+                    'messaging_type' => 'RESPONSE',
+                    'recipient' => $recipient,
+                    'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl]]],
+                ]),
+            );
+        }
+
+        return $response;
     }
 
     // -------------------------------------------------------------------------

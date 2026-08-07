@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A single ordered step of an automation rule. Not tenant-scoped directly —
@@ -17,14 +18,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $rule_id
  * @property RuleActionType $action_type
  * @property string $message_template
+ * @property string|null $image_path
  * @property int $delay_seconds
  * @property int $sort
+ * @property-read string|null $image_url
  */
-#[Fillable(['rule_id', 'action_type', 'message_template', 'delay_seconds', 'sort'])]
+#[Fillable(['rule_id', 'action_type', 'message_template', 'image_path', 'delay_seconds', 'sort'])]
 class RuleAction extends Model
 {
     /** @use HasFactory<RuleActionFactory> */
     use HasFactory;
+
+    protected $appends = ['image_url'];
 
     protected function casts(): array
     {
@@ -41,5 +46,12 @@ class RuleAction extends Model
     public function rule(): BelongsTo
     {
         return $this->belongsTo(AutomationRule::class, 'rule_id');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path !== null
+            ? Storage::disk('public')->url($this->image_path)
+            : null;
     }
 }

@@ -3,7 +3,9 @@
 use App\Models\AutomationRule;
 use App\Models\ChannelConnection;
 use App\Models\RuleAction;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 function rulePayload(int $connectionId, array $overrides = []): array
 {
@@ -56,6 +58,87 @@ test('a dm action is rejected for a comment rule', function () {
             'actions' => [['action_type' => 'dm', 'message_template' => 'hi', 'delay_seconds' => 0]],
         ]))
         ->assertSessionHasErrors('actions.0.action_type');
+});
+
+test('a message-surface rule accepts a dm action', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($user)
+        ->post(route('rules.store'), rulePayload($connection->id, [
+            'trigger_surface' => 'message',
+            'match_type' => 'contains',
+            'keyword' => 'price',
+            'actions' => [['action_type' => 'dm', 'message_template' => 'hi', 'delay_seconds' => 0]],
+        ]))
+        ->assertRedirect(route('rules.index'));
+
+    expect(AutomationRule::withoutTenantScope()->where('tenant_id', $tenant->id)->count())->toBe(1);
+});
+
+test('a message-surface rule rejects a public_reply action', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($user)
+        ->from(route('rules.index'))
+        ->post(route('rules.store'), rulePayload($connection->id, ['trigger_surface' => 'message']))
+        ->assertSessionHasErrors('actions.0.action_type');
+});
+
+test('a non-comment rule cannot target a specific post', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($user)
+        ->from(route('rules.index'))
+        ->post(route('rules.store'), rulePayload($connection->id, [
+            'trigger_surface' => 'message',
+            'target_scope' => 'specific',
+            'target_ref' => 'm1',
+            'actions' => [['action_type' => 'dm', 'message_template' => 'hi', 'delay_seconds' => 0]],
+        ]))
+        ->assertSessionHasErrors('target_scope');
+});
+
+test('an owner can attach an image to a private reply action', function () {
+    Storage::fake('public');
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->create(['tenant_id' => $tenant->id]);
+    $image = UploadedFile::fake()->image('promo.jpg');
+
+    $this->actingAs($user)
+        ->post(route('rules.store'), rulePayload($connection->id, [
+            'actions' => [[
+                'action_type' => 'private_reply',
+                'message_template' => 'hi',
+                'delay_seconds' => 0,
+                'image' => $image,
+            ]],
+        ]))
+        ->assertRedirect(route('rules.index'));
+
+    $action = RuleAction::sole();
+    expect($action->image_path)->not->toBeNull();
+    Storage::disk('public')->assertExists($action->image_path);
+});
+
+test('an image is rejected on a public_reply action', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->create(['tenant_id' => $tenant->id]);
+    $image = UploadedFile::fake()->image('promo.jpg');
+
+    $this->actingAs($user)
+        ->from(route('rules.index'))
+        ->post(route('rules.store'), rulePayload($connection->id, [
+            'actions' => [[
+                'action_type' => 'public_reply',
+                'message_template' => 'hi',
+                'delay_seconds' => 0,
+                'image' => $image,
+            ]],
+        ]))
+        ->assertSessionHasErrors('actions.0.image');
 });
 
 test('a rule cannot target another tenant\'s connection', function () {

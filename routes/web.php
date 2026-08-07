@@ -10,11 +10,13 @@ use App\Http\Controllers\AnalyticsLogController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\RuleController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+Route::post('locale', [LanguageController::class, 'update'])->name('locale.update');
 
 // Public legal pages (required for Meta app review / going live).
 Route::view('privacy', 'legal.privacy')->name('legal.privacy');
@@ -54,6 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('rules/posts', [RuleController::class, 'posts'])->name('rules.posts');
     Route::post('rules', [RuleController::class, 'store'])->name('rules.store');
     Route::put('rules/{automationRule}', [RuleController::class, 'update'])->name('rules.update');
+    Route::patch('rules/{automationRule}/toggle', [RuleController::class, 'toggleActive'])->name('rules.toggle');
     Route::delete('rules/{automationRule}', [RuleController::class, 'destroy'])->name('rules.destroy');
 
     // Platform admin.

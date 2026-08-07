@@ -49,6 +49,35 @@ test('a comment matching no rule queues nothing', function () {
     Bus::assertNotDispatched(SendReply::class);
 });
 
+test('a messenger text message matching a message-surface rule queues a reply job', function () {
+    Bus::fake([SendReply::class]);
+    $tenant = Tenant::factory()->create();
+    Subscription::factory()->create(['tenant_id' => $tenant->id]);
+    $connection = ChannelConnection::factory()->facebook()->create([
+        'tenant_id' => $tenant->id,
+        'provider_account_id' => '111',
+    ]);
+    AutomationRule::factory()
+        ->contains('price')
+        ->create([
+            'tenant_id' => $tenant->id,
+            'channel_connection_id' => $connection->id,
+            'trigger_surface' => 'message',
+        ])
+        ->actions()->create([
+            'action_type' => 'dm',
+            'message_template' => 'Thanks!',
+            'delay_seconds' => 0,
+            'sort' => 0,
+        ]);
+
+    $event = WebhookEvent::factory()->create(['raw_payload' => messengerTextPayload('111', 'm1', '999', 'what is the price?')]);
+
+    ProcessMetaWebhook::dispatchSync($event->id);
+
+    Bus::assertDispatched(SendReply::class);
+});
+
 test('a self-authored comment never queues a reply', function () {
     Bus::fake([SendReply::class]);
     tenantWithRule('price');

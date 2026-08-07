@@ -90,6 +90,19 @@ class RuleController extends Controller
         return to_route('rules.index');
     }
 
+    public function toggleActive(AutomationRule $automationRule): RedirectResponse
+    {
+        $this->authorize('update', $automationRule);
+
+        $automationRule->update([
+            'is_active' => !$automationRule->is_active,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('rules.saved')]);
+
+        return to_route('rules.index');
+    }
+
     public function destroy(AutomationRule $automationRule): RedirectResponse
     {
         $this->authorize('delete', $automationRule);

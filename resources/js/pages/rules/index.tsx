@@ -19,6 +19,7 @@ type Rule = {
     match_type: string;
     keyword: string | null;
     priority: number;
+    auto_like_comment: boolean;
     is_active: boolean;
     channel_connection?: Connection | null;
     actions: Action[];
@@ -33,12 +34,122 @@ function truncate(text: string, max: number): string {
     return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
+function VariableTemplateToolbar({ onInsert }: { onInsert: (text: string) => void }) {
+    const variables = [
+        { label: '{customer_name}', title: 'اسم العميل' },
+        { label: '{product_name}', title: 'اسم المنتج' },
+        { label: '{price}', title: 'السعر' },
+        { label: '{phone_number}', title: 'رقم الهاتف' },
+    ];
+
+    const templates = [
+        { label: '👋 مرحباً {customer_name}', text: 'أهلاً بك {customer_name}! 👋' },
+        { label: '🏷️ سعر {product_name}', text: 'سعر {product_name} هو {price}.' },
+        { label: '📞 للتواصل معنا', text: 'للتواصل معنا عبر الواتساب: {phone_number}' },
+    ];
+
+    return (
+        <div className="flex flex-col gap-2 rounded-xl border border-primary/15 bg-primary/5 p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-bold text-muted-foreground me-1">💡 متغيرات سريعة:</span>
+                {variables.map((v) => (
+                    <button
+                        key={v.label}
+                        type="button"
+                        onClick={() => onInsert(v.label)}
+                        className="rounded-lg bg-card px-2 py-1 font-mono text-[11px] font-bold text-primary shadow-xs border border-primary/20 hover:bg-primary hover:text-white transition-colors"
+                        title={v.title}
+                    >
+                        + {v.label}
+                    </button>
+                ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-bold text-muted-foreground me-1">✨ قوالب جاهزة للرد:</span>
+                {templates.map((t) => (
+                    <button
+                        key={t.label}
+                        type="button"
+                        onClick={() => onInsert(t.text)}
+                        className="rounded-lg bg-card px-2 py-1 font-semibold text-[11px] text-foreground shadow-xs border border-border hover:border-primary hover:text-primary transition-colors"
+                    >
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/** Object URL for a locally-picked file, revoked automatically on change/unmount. */
+function useObjectUrl(file: File | null): string | null {
+    const [url, setUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!file) {
+            setUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        setUrl(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [file]);
+
+    return url;
+}
+
+function ImageAttachmentInput({
+    previewUrl,
+    onChange,
+}: {
+    previewUrl: string | null;
+    onChange: (file: File | null) => void;
+}) {
+    const { t } = useTranslations();
+
+    return (
+        <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+                {t('rules.image')}
+            </span>
+            <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+                className="text-xs"
+            />
+            <span className="text-xs text-muted-foreground">
+                {t('rules.image_help')}
+            </span>
+            {previewUrl && (
+                <img
+                    src={previewUrl}
+                    alt=""
+                    className="mt-1 h-20 w-20 rounded-md border border-border object-cover"
+                />
+            )}
+        </div>
+    );
+}
+
 export default function RulesIndex({ rules: ruleList, connections }: Props) {
     const { t } = useTranslations();
     const { submit: httpSubmit } = useHttp();
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [postsLoading, setPostsLoading] = useState(false);
+    const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
+
+    const [publicReplyText, setPublicReplyText] = useState('');
+    const [privateReplyText, setPrivateReplyText] = useState('');
+    const [privateReplyImage, setPrivateReplyImage] = useState<File | null>(null);
+    const [dmText, setDmText] = useState('');
+    const [dmImage, setDmImage] = useState<File | null>(null);
+
+    const privateReplyImageUrl = useObjectUrl(privateReplyImage);
+    const dmImageUrl = useObjectUrl(dmImage);
 
     const form = useForm({
         channel_connection_id: connections[0]?.id ?? 0,
@@ -50,6 +161,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
         keyword: '',
         case_sensitive: false,
         priority: 0,
+        auto_like_comment: false,
         is_active: true,
         actions: [
             {
@@ -60,24 +172,121 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
         ],
     });
 
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-        form.post(rules.store().url, {
-            onSuccess: () =>
-                form.reset('name', 'keyword', 'target_ref', 'actions'),
+    const startEdit = (rule: Rule) => {
+        setEditingRuleId(rule.id);
+        form.setData({
+            channel_connection_id: rule.channel_connection?.id ?? connections[0]?.id ?? 0,
+            name: rule.name,
+            trigger_surface: rule.trigger_surface,
+            target_scope: rule.target_scope,
+            target_ref: rule.target_ref ?? '',
+            match_type: rule.match_type,
+            keyword: rule.keyword ?? '',
+            case_sensitive: false,
+            priority: rule.priority,
+            auto_like_comment: rule.auto_like_comment ?? false,
+            is_active: rule.is_active,
+            actions: rule.actions.map((a) => ({
+                action_type: a.action_type,
+                message_template: a.message_template,
+                delay_seconds: 0,
+            })),
+        });
+
+        const pub = rule.actions.find((a) => a.action_type === 'public_reply');
+        const priv = rule.actions.find((a) => a.action_type === 'private_reply');
+        const dm = rule.actions.find((a) => a.action_type === 'dm');
+
+        setPublicReplyText(pub ? pub.message_template : '');
+        setPrivateReplyText(priv ? priv.message_template : '');
+        setDmText(dm ? dm.message_template : '');
+    };
+
+    const cancelEdit = () => {
+        setEditingRuleId(null);
+        form.reset();
+        resetActionInputs();
+    };
+
+    const surface = form.data.trigger_surface;
+
+    const setSurface = (value: string) => {
+        form.setData({
+            ...form.data,
+            trigger_surface: value,
+            target_scope: 'all',
+            target_ref: '',
         });
     };
 
-    const remove = (id: number) => router.delete(rules.destroy(id).url);
+    const resetActionInputs = () => {
+        setPublicReplyText('');
+        setPrivateReplyText('');
+        setPrivateReplyImage(null);
+        setDmText('');
+        setDmImage(null);
+    };
 
-    const setAction = (patch: Partial<Action> & { delay_seconds?: number }) =>
-        form.setData('actions', [{ ...form.data.actions[0], ...patch }]);
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const actions =
+            surface === 'message'
+                ? [
+                      {
+                          action_type: 'dm',
+                          message_template: dmText,
+                          delay_seconds: 0,
+                          image: dmImage,
+                      },
+                  ]
+                : [
+                      ...(publicReplyText.trim()
+                          ? [
+                                {
+                                    action_type: 'public_reply',
+                                    message_template: publicReplyText,
+                                    delay_seconds: 0,
+                                },
+                            ]
+                          : []),
+                      ...(privateReplyText.trim()
+                          ? [
+                                {
+                                    action_type: 'private_reply',
+                                    message_template: privateReplyText,
+                                    delay_seconds: 0,
+                                    image: privateReplyImage,
+                                },
+                            ]
+                          : []),
+                  ];
+
+        form.transform((data) => ({ ...data, actions }));
+        if (editingRuleId) {
+            form.put(rules.update(editingRuleId).url, {
+                onSuccess: () => {
+                    cancelEdit();
+                },
+            });
+        } else {
+            form.post(rules.store().url, {
+                onSuccess: () => {
+                    form.reset('name', 'keyword', 'target_ref', 'actions');
+                    resetActionInputs();
+                },
+            });
+        }
+    };
+
+    const toggleRule = (id: number) => router.patch(`/rules/${id}/toggle`, {}, { preserveScroll: true });
+    const remove = (id: number) => router.delete(rules.destroy(id).url);
 
     const connectionId = form.data.channel_connection_id;
     const targetScope = form.data.target_scope;
 
     useEffect(() => {
-        if (targetScope !== 'specific' || !connectionId) {
+        if (surface !== 'post_comment' || targetScope !== 'specific' || !connectionId) {
             return;
         }
 
@@ -108,7 +317,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [targetScope, connectionId]);
+    }, [surface, targetScope, connectionId]);
 
     return (
         <>
@@ -120,7 +329,9 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{t('rules.add')}</CardTitle>
+                        <CardTitle>
+                            {editingRuleId ? '✏️ تعديل قاعدة الرد المؤتمت' : t('rules.add')}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {connections.length === 0 ? (
@@ -132,6 +343,24 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                 onSubmit={submit}
                                 className="grid gap-4 md:grid-cols-2"
                             >
+                                <label className="flex flex-col gap-1 text-sm md:col-span-2">
+                                    {t('rules.trigger_surface')}
+                                    <select
+                                        className={selectClass}
+                                        value={surface}
+                                        onChange={(e) =>
+                                            setSurface(e.target.value)
+                                        }
+                                    >
+                                        <option value="post_comment">
+                                            {t('surface.post_comment')}
+                                        </option>
+                                        <option value="message">
+                                            {t('surface.message')}
+                                        </option>
+                                    </select>
+                                </label>
+
                                 <label className="flex flex-col gap-1 text-sm">
                                     {t('rules.connection')}
                                     <select
@@ -170,73 +399,76 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     />
                                 </label>
 
-                                <label className="flex flex-col gap-1 text-sm">
-                                    {t('rules.target_scope')}
-                                    <select
-                                        className={selectClass}
-                                        value={form.data.target_scope}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'target_scope',
-                                                e.target.value,
-                                            )
-                                        }
-                                    >
-                                        <option value="all">
-                                            {t('rules.target_all')}
-                                        </option>
-                                        <option value="specific">
-                                            {t('rules.target_specific')}
-                                        </option>
-                                    </select>
-                                </label>
-
-                                {form.data.target_scope === 'specific' && (
+                                {surface === 'post_comment' && (
                                     <label className="flex flex-col gap-1 text-sm">
-                                        {t('rules.target_ref')}
+                                        {t('rules.target_scope')}
                                         <select
                                             className={selectClass}
-                                            value={form.data.target_ref}
+                                            value={form.data.target_scope}
                                             onChange={(e) =>
                                                 form.setData(
-                                                    'target_ref',
+                                                    'target_scope',
                                                     e.target.value,
                                                 )
                                             }
-                                            required
-                                            disabled={postsLoading}
                                         >
-                                            <option value="" disabled>
-                                                {postsLoading
-                                                    ? t(
-                                                          'rules.target_ref_loading',
-                                                      )
-                                                    : t(
-                                                          'rules.target_ref_placeholder',
-                                                      )}
+                                            <option value="all">
+                                                {t('rules.target_all')}
                                             </option>
-                                            {posts.map((post) => (
-                                                <option
-                                                    key={post.id}
-                                                    value={post.id}
-                                                >
-                                                    {post.title
-                                                        ? truncate(
-                                                              post.title,
-                                                              60,
-                                                          )
-                                                        : post.id}
-                                                </option>
-                                            ))}
+                                            <option value="specific">
+                                                {t('rules.target_specific')}
+                                            </option>
                                         </select>
-                                        <span className="text-xs text-muted-foreground">
-                                            {!postsLoading &&
-                                            posts.length === 0
-                                                ? t('rules.target_ref_empty')
-                                                : t('rules.target_ref_help')}
-                                        </span>
                                     </label>
                                 )}
+
+                                {surface === 'post_comment' &&
+                                    form.data.target_scope === 'specific' && (
+                                        <label className="flex flex-col gap-1 text-sm">
+                                            {t('rules.target_ref')}
+                                            <select
+                                                className={selectClass}
+                                                value={form.data.target_ref}
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'target_ref',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                                disabled={postsLoading}
+                                            >
+                                                <option value="" disabled>
+                                                    {postsLoading
+                                                        ? t(
+                                                              'rules.target_ref_loading',
+                                                          )
+                                                        : t(
+                                                              'rules.target_ref_placeholder',
+                                                          )}
+                                                </option>
+                                                {posts.map((post) => (
+                                                    <option
+                                                        key={post.id}
+                                                        value={post.id}
+                                                    >
+                                                        {post.title
+                                                            ? truncate(
+                                                                  post.title,
+                                                                  60,
+                                                              )
+                                                            : post.id}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <span className="text-xs text-muted-foreground">
+                                                {!postsLoading &&
+                                                posts.length === 0
+                                                    ? t('rules.target_ref_empty')
+                                                    : t('rules.target_ref_help')}
+                                            </span>
+                                        </label>
+                                    )}
 
                                 <label className="flex flex-col gap-1 text-sm">
                                     {t('rules.match')}
@@ -278,97 +510,120 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     </label>
                                 )}
 
-                                 <div className="grid gap-4 md:col-span-2">
-                                    <label className="flex flex-col gap-1 text-sm">
-                                        <span className="font-medium text-foreground">
-                                            💬 {t('action.public_reply')} (رد عام على التعليق)
-                                        </span>
-                                        <textarea
-                                            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                            value={
-                                                (form.data.actions || []).find(
-                                                    (a) => a.action_type === 'public_reply',
-                                                )?.message_template ?? ''
+                                {surface === 'post_comment' && (
+                                    <div className="flex items-center gap-2 py-1 md:col-span-2">
+                                        <input
+                                            type="checkbox"
+                                            id="auto_like_comment"
+                                            checked={form.data.auto_like_comment}
+                                            onChange={(e) =>
+                                                form.setData('auto_like_comment', e.target.checked)
                                             }
-                                            onChange={(e) => {
-                                                const text = e.target.value;
-                                                const existingPrivate = (form.data.actions || []).find(
-                                                    (a) => a.action_type === 'private_reply',
-                                                );
-                                                const newActions = [];
-                                                if (text.trim()) {
-                                                    newActions.push({
-                                                        action_type: 'public_reply',
-                                                        message_template: text,
-                                                        delay_seconds: 0,
-                                                    });
-                                                }
-                                                if (existingPrivate && existingPrivate.message_template?.trim()) {
-                                                    newActions.push(existingPrivate);
-                                                }
-                                                // Fallback if both empty
-                                                if (newActions.length === 0) {
-                                                    newActions.push({
-                                                        action_type: 'public_reply',
-                                                        message_template: text,
-                                                        delay_seconds: 0,
-                                                    });
-                                                }
-                                                form.setData('actions', newActions);
-                                            }}
-                                            placeholder="أهلاً بك {{commenter_name}}، تفضل التفاصيل في الرسائل الخاصة..."
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                                         />
-                                        <span className="text-xs text-muted-foreground">
-                                            سيتم نشر هذا النص كتعليق عام تحت تعليق العميل. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
-                                        </span>
-                                    </label>
+                                        <label
+                                            htmlFor="auto_like_comment"
+                                            className="text-xs font-bold text-foreground cursor-pointer flex items-center gap-1.5"
+                                        >
+                                            👍 الإعجاب بالتعليق تلقائياً عند الرد
+                                        </label>
+                                    </div>
+                                )}
 
-                                    <label className="flex flex-col gap-1 text-sm">
-                                        <span className="font-medium text-foreground">
-                                            ✉️ {t('action.private_reply')} (رسالة خاصة على المسنجر)
-                                        </span>
-                                        <textarea
-                                            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                            value={
-                                                (form.data.actions || []).find(
-                                                    (a) => a.action_type === 'private_reply',
-                                                )?.message_template ?? ''
-                                            }
-                                            onChange={(e) => {
-                                                const text = e.target.value;
-                                                const existingPublic = (form.data.actions || []).find(
-                                                    (a) => a.action_type === 'public_reply',
-                                                );
-                                                const newActions = [];
-                                                if (existingPublic && existingPublic.message_template?.trim()) {
-                                                    newActions.push(existingPublic);
+                                {surface === 'post_comment' ? (
+                                    <div className="grid gap-4 md:col-span-2">
+                                        <label className="flex flex-col gap-2 text-sm">
+                                            <span className="font-medium text-foreground">
+                                                💬 {t('action.public_reply')} (رد عام على التعليق)
+                                            </span>
+                                            <VariableTemplateToolbar
+                                                onInsert={(text) =>
+                                                    setPublicReplyText((prev) =>
+                                                        prev ? `${prev} ${text}` : text,
+                                                    )
                                                 }
-                                                if (text.trim()) {
-                                                    newActions.push({
-                                                        action_type: 'private_reply',
-                                                        message_template: text,
-                                                        delay_seconds: 0,
-                                                    });
+                                            />
+                                            <textarea
+                                                className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                                value={publicReplyText}
+                                                onChange={(e) =>
+                                                    setPublicReplyText(
+                                                        e.target.value,
+                                                    )
                                                 }
-                                                if (newActions.length === 0) {
-                                                    newActions.push({
-                                                        action_type: 'public_reply',
-                                                        message_template: '',
-                                                        delay_seconds: 0,
-                                                    });
+                                                placeholder="أهلاً بك {customer_name}، تفضل التفاصيل..."
+                                            />
+                                            <span className="text-xs text-muted-foreground">
+                                                سيتم نشر هذا النص كتعليق عام تحت تعليق العميل. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
+                                            </span>
+                                        </label>
+
+                                        <label className="flex flex-col gap-2 text-sm">
+                                            <span className="font-medium text-foreground">
+                                                ✉️ {t('action.private_reply')} (رسالة خاصة على المسنجر)
+                                            </span>
+                                            <VariableTemplateToolbar
+                                                onInsert={(text) =>
+                                                    setPrivateReplyText((prev) =>
+                                                        prev ? `${prev} ${text}` : text,
+                                                    )
                                                 }
-                                                form.setData('actions', newActions);
-                                            }}
-                                            placeholder="مرحباً {{commenter_name}}، تفاصيل الأسعار والعروض هي..."
-                                        />
-                                        <span className="text-xs text-muted-foreground">
-                                            سيتم إرسال هذا النص كرسالة خاصة للعميل في المسنجر. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
-                                        </span>
-                                    </label>
-                                </div>
+                                            />
+                                            <textarea
+                                                className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                                value={privateReplyText}
+                                                onChange={(e) =>
+                                                    setPrivateReplyText(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="مرحباً {customer_name}، تفاصيل الأسعار والعروض هي..."
+                                            />
+                                            <span className="text-xs text-muted-foreground">
+                                                سيتم إرسال هذا النص كرسالة خاصة للعميل في المسنجر. (استخدم {"{{commenter_name}}"} لطباعة اسم المعلق تلقائياً).
+                                            </span>
+                                            <ImageAttachmentInput
+                                                previewUrl={privateReplyImageUrl}
+                                                onChange={setPrivateReplyImage}
+                                            />
+                                        </label>
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4 md:col-span-2">
+                                        <label className="flex flex-col gap-2 text-sm">
+                                            <span className="font-medium text-foreground">
+                                                📩 {t('action.dm')} ({t('surface.message')})
+                                            </span>
+                                            <VariableTemplateToolbar
+                                                onInsert={(text) =>
+                                                    setDmText((prev) =>
+                                                        prev ? `${prev} ${text}` : text,
+                                                    )
+                                                }
+                                            />
+                                            <textarea
+                                                className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                                value={dmText}
+                                                onChange={(e) =>
+                                                    setDmText(e.target.value)
+                                                }
+                                                placeholder="أهلاً بك، شكراً لتواصلك معنا. تفاصيل السعر هي..."
+                                            />
+                                            <span className="text-xs text-muted-foreground">
+                                                سيتم إرسال هذا النص رداً على أي رسالة مسنجر مطابقة للكلمة المفتاحية.
+                                            </span>
+                                            <ImageAttachmentInput
+                                                previewUrl={dmImageUrl}
+                                                onChange={setDmImage}
+                                            />
+                                        </label>
+                                    </div>
+                                )}
 
                                 {/* Live Preview Widget (المعاينة الحية للرد قبل الحفظ) */}
-                                {((form.data.actions || []).some((a) => (a.message_template || '').trim().length > 0)) && (
+                                {(publicReplyText.trim() ||
+                                    privateReplyText.trim() ||
+                                    dmText.trim()) && (
                                     <div className="md:col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-inner space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
@@ -386,7 +641,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
 
                                         <div className="grid gap-4 md:grid-cols-2">
                                             {/* Public Comment Preview */}
-                                            {((form.data.actions || []).find((a) => a.action_type === 'public_reply')?.message_template?.trim()) && (
+                                            {publicReplyText.trim() && (
                                                 <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-xs space-y-2">
                                                     <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/40">
                                                         <span className="font-semibold text-blue-600 flex items-center gap-1.5">
@@ -414,7 +669,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                             </div>
                                                             <div className="bg-primary/5 border border-primary/15 rounded-xl p-2 max-w-[90%] text-foreground">
                                                                 <span className="font-bold block text-[11px] text-primary">صفحتك الرسمية</span>
-                                                                {((form.data.actions || []).find((a) => a.action_type === 'public_reply')?.message_template ?? '').replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
+                                                                {publicReplyText.replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -422,7 +677,7 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             )}
 
                                             {/* Private Messenger DM Preview */}
-                                            {((form.data.actions || []).find((a) => a.action_type === 'private_reply')?.message_template?.trim()) && (
+                                            {privateReplyText.trim() && (
                                                 <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-xs space-y-2">
                                                     <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/40">
                                                         <span className="font-semibold text-purple-600 flex items-center gap-1.5">
@@ -439,8 +694,48 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                             <div className="bg-card border border-purple-500/20 rounded-2xl rounded-ss-none p-2.5 max-w-[90%] shadow-xs text-foreground space-y-1">
                                                                 <span className="font-bold block text-[10px] text-purple-600">رسالة خاصة من صفحتك إلى أحمد العلي</span>
                                                                 <p className="whitespace-pre-wrap leading-relaxed">
-                                                                    {((form.data.actions || []).find((a) => a.action_type === 'private_reply')?.message_template ?? '').replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
+                                                                    {privateReplyText.replace(/\{\{\s*commenter_name\s*\}\}/g, 'أحمد العلي')}
                                                                 </p>
+                                                                {privateReplyImageUrl && (
+                                                                    <img
+                                                                        src={privateReplyImageUrl}
+                                                                        alt=""
+                                                                        className="mt-1 h-24 w-24 rounded-lg object-cover"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Messenger keyword DM Preview */}
+                                            {dmText.trim() && (
+                                                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-xs space-y-2">
+                                                    <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/40">
+                                                        <span className="font-semibold text-purple-600 flex items-center gap-1.5">
+                                                            📩 معاينة الرد على رسالة المسنجر
+                                                        </span>
+                                                        <span className="size-2 rounded-full bg-purple-500 animate-pulse" />
+                                                    </div>
+
+                                                    <div className="pt-1">
+                                                        <div className="flex items-start gap-2 text-xs">
+                                                            <div className="size-7 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                                                📩
+                                                            </div>
+                                                            <div className="bg-card border border-purple-500/20 rounded-2xl rounded-ss-none p-2.5 max-w-[90%] shadow-xs text-foreground space-y-1">
+                                                                <span className="font-bold block text-[10px] text-purple-600">رسالة خاصة من صفحتك</span>
+                                                                <p className="whitespace-pre-wrap leading-relaxed">
+                                                                    {dmText}
+                                                                </p>
+                                                                {dmImageUrl && (
+                                                                    <img
+                                                                        src={dmImageUrl}
+                                                                        alt=""
+                                                                        className="mt-1 h-24 w-24 rounded-lg object-cover"
+                                                                    />
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -450,13 +745,22 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     </div>
                                 )}
 
-                                <div className="md:col-span-2">
+                                <div className="md:col-span-2 flex items-center gap-2">
                                     <Button
                                         type="submit"
                                         disabled={form.processing}
                                     >
-                                        {t('rules.add')}
+                                        {editingRuleId ? 'حفظ التعديلات' : t('rules.add')}
                                     </Button>
+                                    {editingRuleId && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={cancelEdit}
+                                        >
+                                            إلغاء التعديل
+                                        </Button>
+                                    )}
                                 </div>
                             </form>
                         )}
@@ -474,6 +778,9 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     {t('rules.connection')}
                                 </th>
                                 <th className="p-3 text-start">
+                                    {t('rules.trigger')}
+                                </th>
+                                <th className="p-3 text-start">
                                     {t('rules.match')}
                                 </th>
                                 <th className="p-3 text-start">
@@ -482,14 +789,14 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                 <th className="p-3 text-start">
                                     {t('rules.active')}
                                 </th>
-                                <th className="p-3 text-end"></th>
+                                <th className="p-3 text-end">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
                             {ruleList.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="p-4 text-muted-foreground"
                                     >
                                         {t('rules.no_rules')}
@@ -501,10 +808,17 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                         key={rule.id}
                                         className="border-b border-sidebar-border/40 last:border-0"
                                     >
-                                        <td className="p-3">{rule.name}</td>
+                                        <td className="p-3 font-semibold">{rule.name}</td>
                                         <td className="p-3">
                                             {rule.channel_connection?.name ??
                                                 '—'}
+                                        </td>
+                                        <td className="p-3">
+                                            <Badge variant="outline">
+                                                {t(
+                                                    `surface.${rule.trigger_surface}`,
+                                                )}
+                                            </Badge>
                                         </td>
                                         <td className="p-3">
                                             {t(`match.${rule.match_type}`)}
@@ -530,10 +844,24 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                             >
                                                 {rule.is_active
                                                     ? t('rules.active')
-                                                    : '—'}
+                                                    : 'معطل'}
                                             </Badge>
                                         </td>
-                                        <td className="p-3 text-end">
+                                        <td className="p-3 text-end flex items-center justify-end gap-1.5">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => startEdit(rule)}
+                                            >
+                                                ✏️ تعديل
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant={rule.is_active ? 'secondary' : 'default'}
+                                                onClick={() => toggleRule(rule.id)}
+                                            >
+                                                {rule.is_active ? '⏸️ إيقاف' : '▶️ تفعيل'}
+                                            </Button>
                                             <Button
                                                 size="sm"
                                                 variant="destructive"

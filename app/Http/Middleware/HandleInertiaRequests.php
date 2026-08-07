@@ -46,6 +46,14 @@ class HandleInertiaRequests extends Middleware
         $locale = app()->getLocale();
         $tenant = app(TenantContext::class)->current();
         $user = $request->user();
+        $activeSubscription = $tenant?->activeSubscription();
+        $subscriptionInfo = $activeSubscription ? [
+            'plan_name' => $activeSubscription->plan?->name ?? 'الخطة الحالية',
+            'ends_at' => $activeSubscription->ends_at?->format('Y-m-d'),
+            'days_left' => (int) max(0, (int) now()->diffInDays($activeSubscription->ends_at, false)),
+            'status' => $activeSubscription->status->value,
+            'is_active' => $activeSubscription->isActive(),
+        ] : null;
 
         return [
             ...parent::share($request),
@@ -53,6 +61,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'currentTenant' => $tenant?->only(['id', 'name', 'slug', 'status']),
+                'subscription' => $subscriptionInfo,
                 'tenants' => $user
                     ? $user->tenants()->get(['tenants.id', 'tenants.name', 'tenants.slug'])
                     : [],

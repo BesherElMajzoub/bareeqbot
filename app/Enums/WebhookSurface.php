@@ -11,4 +11,5 @@ enum WebhookSurface: string
     case PostComment = 'post_comment';
     case StoryReply = 'story_reply';
     case StoryMention = 'story_mention';
+    case Message = 'message';
 }

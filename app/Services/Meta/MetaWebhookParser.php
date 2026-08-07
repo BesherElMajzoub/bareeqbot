@@ -136,6 +136,25 @@ class MetaWebhookParser
             }
         }
 
+        // The page's own outgoing message, echoed back — never a trigger.
+        if (Arr::get($message, 'is_echo') === true) {
+            return null;
+        }
+
+        // Plain Messenger/IG DM text — the generic keyword-reply surface.
+        $text = Arr::get($message, 'text');
+        if ($text !== null) {
+            return new IncomingWebhookEvent(
+                platform: $platform,
+                surface: WebhookSurface::Message,
+                assetId: $assetId,
+                objectId: $messageId,
+                actorId: $senderId,
+                text: $text,
+                raw: $messaging,
+            );
+        }
+
         return null;
     }
 }

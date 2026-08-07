@@ -43,6 +43,7 @@ class SendReply implements ShouldQueue
         public string $messageTemplate,
         public array $context,
         public ?string $parentRef = null,
+        public ?string $imageUrl = null,
     ) {}
 
     public function handle(
@@ -106,9 +107,9 @@ class SendReply implements ShouldQueue
 
             $sent = match ($this->actionType) {
                 RuleActionType::PublicReply => (bool) $client->replyToComment($this->sourceObjectId, $message, $connection->access_token, $this->platform),
-                RuleActionType::PrivateReply => (bool) $client->privateReplyToComment($connection->provider_account_id, $this->sourceObjectId, $message, $connection->access_token),
+                RuleActionType::PrivateReply => (bool) $client->privateReplyToComment($connection->provider_account_id, $this->sourceObjectId, $message, $connection->access_token, $this->imageUrl),
                 RuleActionType::Dm => $this->actorId !== null
-                    && (bool) $client->sendDirectMessage($connection->provider_account_id, $this->actorId, $message, $connection->access_token),
+                    && (bool) $client->sendDirectMessage($connection->provider_account_id, $this->actorId, $message, $connection->access_token, $this->imageUrl),
             };
 
             $log->update($sent

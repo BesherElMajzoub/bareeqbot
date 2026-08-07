@@ -205,3 +205,27 @@ function instagramCommentPayload(string $igUserId, string $commentId, string $fr
 {
     return igCommentPayload($igUserId, $commentId, $fromId, $text);
 }
+
+/**
+ * A plain Messenger/IG DM text messaging webhook payload — no story context.
+ *
+ * @return array<string, mixed>
+ */
+function messengerTextPayload(string $assetId, string $messageId, string $fromId, string $text = 'hi there', bool $isEcho = false): array
+{
+    return [
+        'object' => 'page',
+        'entry' => [[
+            'id' => $assetId,
+            'messaging' => [[
+                'sender' => ['id' => $fromId],
+                'recipient' => ['id' => $assetId],
+                'message' => array_filter([
+                    'mid' => $messageId,
+                    'text' => $text,
+                    'is_echo' => $isEcho ?: null,
+                ], fn ($value) => $value !== null),
+            ]],
+        ]],
+    ];
+}

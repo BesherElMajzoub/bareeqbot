@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { History } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { History, Calendar, CreditCard } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/analytics-panel';
 import type {
     AnalyticsSeriesPoint,
@@ -18,6 +18,16 @@ type Props = {
 
 export default function Dashboard({ summary, series, topRules }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage<{
+        auth?: {
+            subscription?: {
+                plan_name: string;
+                ends_at: string;
+                days_left: number;
+                is_active: boolean;
+            };
+        };
+    }>().props;
 
     return (
         <>
@@ -47,6 +57,44 @@ export default function Dashboard({ summary, series, topRules }: Props) {
                         <span>{t('dashboard.view_logs')}</span>
                     </Link>
                 </div>
+
+                {/* Subscription Expiration Widget */}
+                {auth?.subscription && (
+                    <div className="relative z-10 flex flex-col gap-3 rounded-2xl border border-primary/20 bg-card/80 p-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <CreditCard className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-muted-foreground">الخطة الحالية:</span>
+                                    <span className="font-bold text-sm text-foreground">{auth.subscription.plan_name}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span>تاريخ انتهاء الاشتراك:</span>
+                                    <span className="font-bold text-foreground">{auth.subscription.ends_at}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                                auth.subscription.days_left > 5
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                            }`}>
+                                ⏳ متبقي {auth.subscription.days_left} يوماً
+                            </span>
+                            <Link
+                                href="/billing"
+                                className="inline-flex h-8 items-center rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm transition-transform hover:scale-105"
+                            >
+                                إدارة / تجديد
+                            </Link>
+                        </div>
+                    </div>
+                )}
 
                 <div className="relative z-10">
                     <AnalyticsPanel

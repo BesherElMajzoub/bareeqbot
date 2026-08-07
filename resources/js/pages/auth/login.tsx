@@ -1,7 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { Mail, LogIn } from 'lucide-react';
 import InputError from '@/components/input-error';
-import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -25,18 +24,6 @@ export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
             <Head title={t('auth.login', 'Log in')} />
-
-            <PasskeyVerify
-                label={t('auth.passkey_sign_in', 'Sign in with a passkey')}
-                loadingLabel={t(
-                    'auth.passkey_authenticating',
-                    'Authenticating...',
-                )}
-                separator={t(
-                    'auth.passkey_separator',
-                    'Or continue with email',
-                )}
-            />
 
             <Form
                 {...store.form()}
