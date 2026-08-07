@@ -39,7 +39,35 @@ class RuleMatcher
             return true;
         }
 
-        return $targetRef !== null && $rule->target_ref === $targetRef;
+        if ($targetRef === null || $rule->target_ref === null) {
+            return false;
+        }
+
+        if ($rule->target_ref === $targetRef) {
+            return true;
+        }
+
+        // Meta webhooks for FB post comments send post_id in PAGEID_POSTID format.
+        // Match if target_ref equals the post ID part after underscore.
+        if (str_contains($targetRef, '_')) {
+            $parts = explode('_', $targetRef);
+            $actualPostId = end($parts);
+
+            if ($rule->target_ref === $actualPostId) {
+                return true;
+            }
+        }
+
+        if (str_contains((string) $rule->target_ref, '_')) {
+            $parts = explode('_', (string) $rule->target_ref);
+            $rulePostId = end($parts);
+
+            if ($rulePostId === $targetRef) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function textMatches(AutomationRule $rule, ?string $text): bool
