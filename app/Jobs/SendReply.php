@@ -125,6 +125,12 @@ class SendReply implements ShouldQueue
                 'action_type' => $this->actionType->value,
                 'error' => $e->getMessage(),
                 'source_object_id' => $this->sourceObjectId,
+                ...($e instanceof MetaApiException ? [
+                    'meta_code' => $e->metaCode,
+                    'meta_type' => $e->metaType,
+                    'fbtrace_id' => $e->fbtraceId,
+                    'http_status' => $e->getCode(),
+                ] : []),
             ]);
 
             $log?->update(['status' => ReplyLogStatus::Failed, 'error' => mb_substr($e->getMessage(), 0, 500)]);

@@ -223,7 +223,9 @@ class MetaGraphClient
         // Meta Send API recipient.comment_id requires pure comment_id without POSTID_ prefix
         $cleanCommentId = str_contains($commentId, '_') ? (string) last(explode('_', $commentId)) : $commentId;
 
-        return $this->sendMessages($assetId, ['comment_id' => $cleanCommentId], $message, $token, $imageUrl);
+        // No `messaging_type` here — Meta's private-reply (comment_id recipient) request
+        // shape doesn't include it; that field is only for standard id-recipient sends.
+        return $this->sendMessages($assetId, ['comment_id' => $cleanCommentId], $message, $token, $imageUrl, includeMessagingType: false);
     }
 
     /**
@@ -237,21 +239,21 @@ class MetaGraphClient
      */
     public function sendDirectMessage(string $assetId, string $recipientId, string $message, string $token, ?string $imageUrl = null): array
     {
-        return $this->sendMessages($assetId, ['id' => $recipientId], $message, $token, $imageUrl);
+        return $this->sendMessages($assetId, ['id' => $recipientId], $message, $token, $imageUrl, includeMessagingType: true);
     }
 
     /**
      * @param  array<string, string>  $recipient
      * @return array<string, mixed>
      */
-    private function sendMessages(string $assetId, array $recipient, string $message, string $token, ?string $imageUrl): array
+    private function sendMessages(string $assetId, array $recipient, string $message, string $token, ?string $imageUrl, bool $includeMessagingType): array
     {
         $response = [];
 
         if ($message !== '') {
             $response = $this->parseResponse(
                 $this->requestWithToken($token)->post("/{$assetId}/messages", [
-                    'messaging_type' => 'RESPONSE',
+                    ...($includeMessagingType ? ['messaging_type' => 'RESPONSE'] : []),
                     'recipient' => $recipient,
                     'message' => ['text' => $message],
                 ]),
@@ -261,7 +263,7 @@ class MetaGraphClient
         if ($imageUrl !== null) {
             $response = $this->parseResponse(
                 $this->requestWithToken($token)->post("/{$assetId}/messages", [
-                    'messaging_type' => 'RESPONSE',
+                    ...($includeMessagingType ? ['messaging_type' => 'RESPONSE'] : []),
                     'recipient' => $recipient,
                     'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl]]],
                 ]),
