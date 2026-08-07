@@ -3,6 +3,7 @@
 namespace App\Services\Meta;
 
 use App\Data\Meta\MetaPageData;
+use App\Data\Meta\MetaPostData;
 use App\Data\Meta\MetaUserTokenData;
 use App\Enums\ChannelPlatform;
 use Illuminate\Http\Client\PendingRequest;
@@ -127,6 +128,37 @@ class MetaGraphClient
                 instagram_username: $igUsername,
             );
         });
+    }
+
+    /**
+     * Fetch the asset's most recent posts (Facebook Page) or media items
+     * (Instagram business account), for the rules UI's "pick a specific
+     * post" dropdown. Facebook uses the `posts` edge + `message` field,
+     * Instagram uses `media` + `caption`.
+     *
+     * @return Collection<int, MetaPostData>
+     */
+    public function listRecentPosts(string $assetId, string $token, ChannelPlatform $platform, int $limit = 25): Collection
+    {
+        $edge = $platform === ChannelPlatform::Instagram ? 'media' : 'posts';
+        $textField = $platform === ChannelPlatform::Instagram ? 'caption' : 'message';
+        $timeField = $platform === ChannelPlatform::Instagram ? 'timestamp' : 'created_time';
+
+        $response = $this->requestWithToken($token)->get("/{$assetId}/{$edge}", [
+            'fields' => "id,{$textField},{$timeField}",
+            'limit' => $limit,
+        ]);
+
+        $data = $this->parseResponse($response);
+
+        /** @var array<int, array<string, mixed>> $postData */
+        $postData = $data['data'] ?? [];
+
+        return collect($postData)->map(fn (array $post): MetaPostData => new MetaPostData(
+            id: $post['id'],
+            title: $post[$textField] ?? null,
+            created_time: $post[$timeField] ?? null,
+        ));
     }
 
     /**

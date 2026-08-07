@@ -1,4 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, useHttp } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import rules from '@/routes/rules';
 
 type Connection = { id: number; name: string; platform: string };
 type Action = { id: number; action_type: string; message_template: string };
+type Post = { id: string; title: string | null; created_time: string | null };
 type Rule = {
     id: number;
     name: string;
@@ -27,8 +29,16 @@ type Props = { rules: Rule[]; connections: Connection[] };
 const selectClass =
     'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring';
 
+function truncate(text: string, max: number): string {
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
 export default function RulesIndex({ rules: ruleList, connections }: Props) {
     const { t } = useTranslations();
+    const { submit: httpSubmit } = useHttp();
+
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [postsLoading, setPostsLoading] = useState(false);
 
     const form = useForm({
         channel_connection_id: connections[0]?.id ?? 0,
@@ -63,6 +73,43 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
     const setAction = (patch: Partial<Action> & { delay_seconds?: number }) =>
         form.setData('actions', [{ ...form.data.actions[0], ...patch }]);
 
+    const connectionId = form.data.channel_connection_id;
+    const targetScope = form.data.target_scope;
+
+    useEffect(() => {
+        if (targetScope !== 'specific' || !connectionId) {
+            return;
+        }
+
+        let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag for the fetch this effect triggers
+        setPostsLoading(true);
+
+        httpSubmit(
+            rules.posts({ query: { channel_connection_id: connectionId } }),
+        )
+            .then((data) => {
+                if (!cancelled) {
+                    setPosts((data as { posts: Post[] }).posts);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setPosts([]);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setPostsLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [targetScope, connectionId]);
+
     return (
         <>
             <Head title={t('rules.title')} />
@@ -90,12 +137,15 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                     <select
                                         className={selectClass}
                                         value={form.data.channel_connection_id}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'channel_connection_id',
-                                                Number(e.target.value),
-                                            )
-                                        }
+                                        onChange={(e) => {
+                                            form.setData({
+                                                ...form.data,
+                                                channel_connection_id: Number(
+                                                    e.target.value,
+                                                ),
+                                                target_ref: '',
+                                            });
+                                        }}
                                     >
                                         {connections.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -144,7 +194,8 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                 {form.data.target_scope === 'specific' && (
                                     <label className="flex flex-col gap-1 text-sm">
                                         {t('rules.target_ref')}
-                                        <Input
+                                        <select
+                                            className={selectClass}
                                             value={form.data.target_ref}
                                             onChange={(e) =>
                                                 form.setData(
@@ -152,13 +203,37 @@ export default function RulesIndex({ rules: ruleList, connections }: Props) {
                                                     e.target.value,
                                                 )
                                             }
-                                            placeholder={t(
-                                                'rules.target_ref_placeholder',
-                                            )}
                                             required
-                                        />
+                                            disabled={postsLoading}
+                                        >
+                                            <option value="" disabled>
+                                                {postsLoading
+                                                    ? t(
+                                                          'rules.target_ref_loading',
+                                                      )
+                                                    : t(
+                                                          'rules.target_ref_placeholder',
+                                                      )}
+                                            </option>
+                                            {posts.map((post) => (
+                                                <option
+                                                    key={post.id}
+                                                    value={post.id}
+                                                >
+                                                    {post.title
+                                                        ? truncate(
+                                                              post.title,
+                                                              60,
+                                                          )
+                                                        : post.id}
+                                                </option>
+                                            ))}
+                                        </select>
                                         <span className="text-xs text-muted-foreground">
-                                            {t('rules.target_ref_help')}
+                                            {!postsLoading &&
+                                            posts.length === 0
+                                                ? t('rules.target_ref_empty')
+                                                : t('rules.target_ref_help')}
                                         </span>
                                     </label>
                                 )}

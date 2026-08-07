@@ -3,6 +3,7 @@
 use App\Models\AutomationRule;
 use App\Models\ChannelConnection;
 use App\Models\RuleAction;
+use Illuminate\Support\Facades\Http;
 
 function rulePayload(int $connectionId, array $overrides = []): array
 {
@@ -88,4 +89,45 @@ test('a user cannot delete another tenant\'s rule', function () {
         ->assertForbidden();
 
     expect(AutomationRule::withoutTenantScope()->whereKey($otherRule->id)->exists())->toBeTrue();
+});
+
+test('an owner can list a connection\'s posts for the target dropdown', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->facebook()->create(['tenant_id' => $tenant->id]);
+
+    Http::fake(['graph.facebook.com/*' => Http::response([
+        'data' => [
+            ['id' => '111_222', 'message' => 'First post', 'created_time' => '2026-08-01T00:00:00+0000'],
+            ['id' => '111_333', 'message' => 'Second post', 'created_time' => '2026-08-02T00:00:00+0000'],
+        ],
+    ])]);
+
+    $this->actingAs($user)
+        ->getJson(route('rules.posts', ['channel_connection_id' => $connection->id]))
+        ->assertOk()
+        ->assertJson(['posts' => [
+            ['id' => '111_222', 'title' => 'First post', 'created_time' => '2026-08-01T00:00:00+0000'],
+            ['id' => '111_333', 'title' => 'Second post', 'created_time' => '2026-08-02T00:00:00+0000'],
+        ]]);
+});
+
+test('a user cannot list posts for another tenant\'s connection', function () {
+    [$user] = createTenantOwner();
+    $otherConnection = ChannelConnection::factory()->create();
+
+    $this->actingAs($user)
+        ->getJson(route('rules.posts', ['channel_connection_id' => $otherConnection->id]))
+        ->assertNotFound();
+});
+
+test('a failed Meta call returns an empty post list instead of erroring', function () {
+    [$user, $tenant] = createTenantOwner();
+    $connection = ChannelConnection::factory()->facebook()->create(['tenant_id' => $tenant->id]);
+
+    Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'nope', 'code' => 10]], 400)]);
+
+    $this->actingAs($user)
+        ->getJson(route('rules.posts', ['channel_connection_id' => $connection->id]))
+        ->assertOk()
+        ->assertJson(['posts' => []]);
 });

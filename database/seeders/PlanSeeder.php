@@ -17,38 +17,97 @@ class PlanSeeder extends Seeder
 {
     public function run(): void
     {
-        $plans = [
-            ['name' => 'Starter', 'max_pages' => 1, 'monthly' => 300_000],
-            ['name' => 'Growth', 'max_pages' => 5, 'monthly' => 400_000],
-            ['name' => 'Business', 'max_pages' => 15, 'monthly' => 500_000],
-            ['name' => 'Agency', 'max_pages' => 50, 'monthly' => 900_000],
-        ];
-
-        // Longer durations get a discount off the monthly rate.
-        $durations = [1 => 1.00, 3 => 0.95, 6 => 0.90, 12 => 0.80];
-
-        // Connecting Instagram alongside Facebook costs more than Facebook alone.
-        $platformMultipliers = [
-            PlanPlatformScope::Facebook->value => 1.00,
-            PlanPlatformScope::FacebookInstagram->value => 1.80,
-        ];
-
         $currency = config('bariq.billing.currency');
 
-        foreach ($plans as $sort => $data) {
+        $plansData = [
+            [
+                'name' => 'الرد الأساسي',
+                'slug' => 'basic',
+                'max_pages' => 1,
+                'sort' => 0,
+                'prices' => [
+                    1 => [
+                        PlanPlatformScope::Facebook->value => 30_000,
+                        PlanPlatformScope::FacebookInstagram->value => 55_000,
+                    ],
+                    3 => [
+                        PlanPlatformScope::Facebook->value => 85_000,
+                        PlanPlatformScope::FacebookInstagram->value => 150_000,
+                    ],
+                    6 => [
+                        PlanPlatformScope::Facebook->value => 160_000,
+                        PlanPlatformScope::FacebookInstagram->value => 290_000,
+                    ],
+                    12 => [
+                        PlanPlatformScope::Facebook->value => 300_000,
+                        PlanPlatformScope::FacebookInstagram->value => 550_000,
+                    ],
+                ],
+            ],
+            [
+                'name' => 'الرد المتقدم',
+                'slug' => 'advanced',
+                'max_pages' => 5,
+                'sort' => 1,
+                'prices' => [
+                    1 => [
+                        PlanPlatformScope::Facebook->value => 40_000,
+                        PlanPlatformScope::FacebookInstagram->value => 75_000,
+                    ],
+                    3 => [
+                        PlanPlatformScope::Facebook->value => 110_000,
+                        PlanPlatformScope::FacebookInstagram->value => 210_000,
+                    ],
+                    6 => [
+                        PlanPlatformScope::Facebook->value => 200_000,
+                        PlanPlatformScope::FacebookInstagram->value => 400_000,
+                    ],
+                    12 => [
+                        PlanPlatformScope::Facebook->value => 380_000,
+                        PlanPlatformScope::FacebookInstagram->value => 750_000,
+                    ],
+                ],
+            ],
+            [
+                'name' => 'الرد المفتوح',
+                'slug' => 'open',
+                'max_pages' => 15,
+                'sort' => 2,
+                'prices' => [
+                    1 => [
+                        PlanPlatformScope::Facebook->value => 50_000,
+                        PlanPlatformScope::FacebookInstagram->value => 90_000,
+                    ],
+                    3 => [
+                        PlanPlatformScope::Facebook->value => 135_000,
+                        PlanPlatformScope::FacebookInstagram->value => 260_000,
+                    ],
+                    6 => [
+                        PlanPlatformScope::Facebook->value => 260_000,
+                        PlanPlatformScope::FacebookInstagram->value => 500_000,
+                    ],
+                    12 => [
+                        PlanPlatformScope::Facebook->value => 500_000,
+                        PlanPlatformScope::FacebookInstagram->value => 950_000,
+                    ],
+                ],
+            ],
+        ];
+
+        foreach ($plansData as $data) {
             $plan = Plan::updateOrCreate(
-                ['slug' => Str::slug($data['name'])],
+                ['slug' => $data['slug']],
                 [
                     'name' => $data['name'],
                     'max_pages' => $data['max_pages'],
                     'features' => ['max_pages' => $data['max_pages']],
                     'is_active' => true,
-                    'sort' => $sort,
+                    'sort' => $data['sort'],
                 ],
             );
 
-            foreach ($durations as $months => $durationMultiplier) {
-                foreach ($platformMultipliers as $platformScope => $platformMultiplier) {
+            foreach ($data['prices'] as $months => $scopePrices) {
+                foreach ($scopePrices as $platformScope => $price) {
                     PlanPrice::updateOrCreate(
                         [
                             'plan_id' => $plan->id,
@@ -57,7 +116,7 @@ class PlanSeeder extends Seeder
                             'platform_scope' => $platformScope,
                         ],
                         [
-                            'price' => round($data['monthly'] * $months * $durationMultiplier * $platformMultiplier, 2),
+                            'price' => $price,
                             'is_active' => true,
                         ],
                     );

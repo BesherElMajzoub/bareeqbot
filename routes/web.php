@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Automation rules (comment auto-replies).
     Route::get('rules', [RuleController::class, 'index'])->name('rules.index');
+    Route::get('rules/posts', [RuleController::class, 'posts'])->name('rules.posts');
     Route::post('rules', [RuleController::class, 'store'])->name('rules.store');
     Route::put('rules/{automationRule}', [RuleController::class, 'update'])->name('rules.update');
     Route::delete('rules/{automationRule}', [RuleController::class, 'destroy'])->name('rules.destroy');
