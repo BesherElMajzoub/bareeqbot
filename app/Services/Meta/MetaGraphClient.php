@@ -176,14 +176,20 @@ class MetaGraphClient
 
     /**
      * Send a private reply (DM) in response to a comment. One per comment,
-     * within Meta's messaging window.
+     * within Meta's messaging window. Uses the Send API with a `comment_id`
+     * recipient (the `/{comment-id}/private_replies` edge returns "Object
+     * does not exist" even for valid comment ids — Meta routes private
+     * replies through Send API instead).
      *
      * @return array<string, mixed>
      */
-    public function privateReplyToComment(string $commentId, string $message, string $token): array
+    public function privateReplyToComment(string $assetId, string $commentId, string $message, string $token): array
     {
         return $this->parseResponse(
-            $this->requestWithToken($token)->post("/{$commentId}/private_replies", ['message' => $message]),
+            $this->requestWithToken($token)->post("/{$assetId}/messages", [
+                'recipient' => ['comment_id' => $commentId],
+                'message' => ['text' => $message],
+            ]),
         );
     }
 

@@ -38,14 +38,15 @@ test('a public reply is sent and logged with the rendered template', function ()
     Http::assertSent(fn ($request) => str_contains($request->url(), 'comment-1/comments') && $request['message'] === 'Hi Sara');
 });
 
-test('a private reply hits the private_replies edge', function () {
+test('a private reply is sent via the Send API with a comment_id recipient', function () {
     Http::fake(['graph.facebook.com/*' => Http::response(['id' => 'm-1'])]);
     $connection = ChannelConnection::factory()->facebook()->create();
     $rule = AutomationRule::factory()->create(['tenant_id' => $connection->tenant_id, 'channel_connection_id' => $connection->id]);
 
     sendReply($connection, $rule->id, RuleActionType::PrivateReply);
 
-    Http::assertSent(fn ($request) => str_contains($request->url(), 'comment-1/private_replies'));
+    Http::assertSent(fn ($request) => str_contains($request->url(), "{$connection->provider_account_id}/messages")
+        && $request['recipient']['comment_id'] === 'comment-1');
 });
 
 test('the same object + action is never replied to twice (idempotent)', function () {
