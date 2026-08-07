@@ -52,18 +52,28 @@ class ProcessMetaWebhook implements ShouldQueue
             foreach ($incoming as $item) {
                 $connection = $resolver->forAsset($item->assetId);
 
-                // Unknown asset, or a connection that isn't active → ignore.
-                if ($connection === null || ! $connection->isActive()) {
+                if ($connection === null) {
+                    \Illuminate\Support\Facades\Log::warning('ProcessMetaWebhook: Connection not found for asset ID', ['asset_id' => $item->assetId]);
+                    continue;
+                }
+
+                if (! $connection->isActive()) {
+                    \Illuminate\Support\Facades\Log::warning('ProcessMetaWebhook: Connection is inactive', ['connection_id' => $connection->id]);
                     continue;
                 }
 
                 // Skip self-authored events (the page/account acting on itself) to avoid loops.
                 if ($item->actorId !== null && $item->actorId === $connection->provider_account_id) {
+                    \Illuminate\Support\Facades\Log::info('ProcessMetaWebhook: Skipped self-authored comment by page/account', [
+                        'actor_id' => $item->actorId,
+                        'provider_account_id' => $connection->provider_account_id,
+                    ]);
                     continue;
                 }
 
                 $tenant = $connection->tenant;
                 if ($tenant === null) {
+                    \Illuminate\Support\Facades\Log::warning('ProcessMetaWebhook: Tenant not found for connection', ['connection_id' => $connection->id]);
                     continue;
                 }
 
@@ -73,15 +83,38 @@ class ProcessMetaWebhook implements ShouldQueue
 
                 // Automation is paused for suspended tenants (admin kill switch)
                 // and for tenants without an active subscription.
-                if (! $tenant->isActive() || ! $quota->hasActiveSubscription($tenant)) {
+                if (! $tenant->isActive()) {
+                    \Illuminate\Support\Facades\Log::warning('ProcessMetaWebhook: Tenant is suspended/inactive', ['tenant_id' => $tenant->id]);
                     continue;
                 }
+
+                if (! $quota->hasActiveSubscription($tenant)) {
+                    \Illuminate\Support\Facades\Log::warning('ProcessMetaWebhook: Tenant has no active subscription', ['tenant_id' => $tenant->id]);
+                    continue;
+                }
+
+                \Illuminate\Support\Facades\Log::info('ProcessMetaWebhook: Attempting rule match', [
+                    'connection_id' => $connection->id,
+                    'surface' => $item->surface->value,
+                    'parent_id' => $item->parentId,
+                    'text' => $item->text,
+                ]);
 
                 // Match a rule and queue its replies (idempotent via reply_logs).
                 $rule = $ruleMatcher->match($connection, $item->surface, $item->parentId, $item->text);
 
                 if ($rule !== null) {
+                    \Illuminate\Support\Facades\Log::info('ProcessMetaWebhook: Rule MATCHED!', [
+                        'rule_id' => $rule->id,
+                        'rule_name' => $rule->name,
+                    ]);
                     $replyDispatcher->dispatch($connection, $rule, $item);
+                } else {
+                    \Illuminate\Support\Facades\Log::info('ProcessMetaWebhook: NO rule matched for event.', [
+                        'surface' => $item->surface->value,
+                        'parent_id' => $item->parentId,
+                        'text' => $item->text,
+                    ]);
                 }
 
                 $handledAny = true;
