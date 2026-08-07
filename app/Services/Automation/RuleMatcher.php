@@ -21,16 +21,43 @@ class RuleMatcher
         ?string $targetRef,
         ?string $text,
     ): ?AutomationRule {
-        return AutomationRule::query()
+        $rules = AutomationRule::query()
             ->where('channel_connection_id', $connection->id)
             ->where('trigger_surface', $surface)
             ->where('is_active', true)
             ->orderByDesc('priority')
             ->orderBy('id')
             ->with('actions')
-            ->get()
-            ->first(fn (AutomationRule $rule): bool => $this->targetMatches($rule, $targetRef)
-                && $this->textMatches($rule, $text));
+            ->get();
+
+        if ($rules->isEmpty()) {
+            \Illuminate\Support\Facades\Log::info('RuleMatcher: No active rules found for connection and surface', [
+                'connection_id' => $connection->id,
+                'surface' => $surface->value,
+            ]);
+            return null;
+        }
+
+        foreach ($rules as $rule) {
+            $tMatch = $this->targetMatches($rule, $targetRef);
+            $txtMatch = $this->textMatches($rule, $text);
+
+            \Illuminate\Support\Facades\Log::info('RuleMatcher: Evaluated rule', [
+                'rule_id' => $rule->id,
+                'rule_name' => $rule->name,
+                'target_scope' => $rule->target_scope->value,
+                'rule_target_ref' => $rule->target_ref,
+                'incoming_target_ref' => $targetRef,
+                'target_matches' => $tMatch,
+                'text_matches' => $txtMatch,
+            ]);
+
+            if ($tMatch && $txtMatch) {
+                return $rule;
+            }
+        }
+
+        return null;
     }
 
     protected function targetMatches(AutomationRule $rule, ?string $targetRef): bool
