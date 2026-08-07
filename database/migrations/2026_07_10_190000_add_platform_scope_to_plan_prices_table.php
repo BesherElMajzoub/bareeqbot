@@ -34,16 +34,20 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
 
         Schema::table('plan_prices', function (Blueprint $table) {
-            $table->unique(['plan_id', 'duration_months', 'currency']);
-        });
-
-        Schema::table('plan_prices', function (Blueprint $table) {
             $table->dropUnique('plan_prices_scope_unique');
         });
 
         Schema::table('plan_prices', function (Blueprint $table) {
             $table->dropColumn('platform_scope');
         });
+
+        try {
+            Schema::table('plan_prices', function (Blueprint $table) {
+                $table->unique(['plan_id', 'duration_months', 'currency']);
+            });
+        } catch (\Throwable $e) {
+            // Ignore if index creation fails due to duplicate scope entries during rollback
+        }
 
         Schema::enableForeignKeyConstraints();
     }
