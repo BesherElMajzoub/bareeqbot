@@ -69,6 +69,12 @@ class SendReply implements ShouldQueue
         $log = null;
 
         try {
+            \Illuminate\Support\Facades\Log::info('SendReply: Attempting reply', [
+                'action_type' => $this->actionType->value,
+                'source_object_id' => $this->sourceObjectId,
+                'actor_id' => $this->actorId,
+            ]);
+
             // Reserve the idempotency slot for this (platform, object, action).
             $log = ReplyLog::firstOrCreate(
                 [
@@ -89,6 +95,10 @@ class SendReply implements ShouldQueue
 
             // Already sent by a previous run → dedupe, never send twice.
             if (! $log->wasRecentlyCreated && $log->status === ReplyLogStatus::Sent) {
+                \Illuminate\Support\Facades\Log::info('SendReply: Already sent previously, skipping due to idempotency guard.', [
+                    'source_object_id' => $this->sourceObjectId,
+                    'action_type' => $this->actionType->value,
+                ]);
                 return;
             }
 
@@ -104,7 +114,18 @@ class SendReply implements ShouldQueue
             $log->update($sent
                 ? ['status' => ReplyLogStatus::Sent, 'responded_at' => now(), 'error' => null]
                 : ['status' => ReplyLogStatus::Skipped]);
+
+            \Illuminate\Support\Facades\Log::info('SendReply: Reply executed successfully!', [
+                'action_type' => $this->actionType->value,
+                'sent' => $sent,
+            ]);
         } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('SendReply: Meta API Error on send reply', [
+                'action_type' => $this->actionType->value,
+                'error' => $e->getMessage(),
+                'source_object_id' => $this->sourceObjectId,
+            ]);
+
             $log?->update(['status' => ReplyLogStatus::Failed, 'error' => mb_substr($e->getMessage(), 0, 500)]);
 
             // An expired/revoked token will fail on every retry — mark the
