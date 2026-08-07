@@ -182,11 +182,8 @@ class MetaGraphClient
      */
     public function privateReplyToComment(string $commentId, string $message, string $token): array
     {
-        // Meta Graph API /private_replies requires pure comment_id without POSTID_ prefix
-        $targetId = str_contains($commentId, '_') ? (string) last(explode('_', $commentId)) : $commentId;
-
         return $this->parseResponse(
-            $this->requestWithToken($token)->post("/{$targetId}/private_replies", ['message' => $message]),
+            $this->requestWithToken($token)->post("/{$commentId}/private_replies", ['message' => $message]),
         );
     }
 
